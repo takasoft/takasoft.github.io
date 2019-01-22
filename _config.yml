@@ -1,0 +1,27 @@
+# Permalinks
+permalink:        /:title
+
+# Setup
+title:            TakaSoft
+tagline:          Making awesome software
+description:      Making awesome software
+url:              
+baseurl:          
+
+# Pagination number
+paginate:         10
+
+# category page
+collections:
+  category:
+    output: true
+
+defaults:
+  -
+    scope:
+      path: ""
+      type: category
+    values:
+      layout: "category"
+
+google_analytics: UA-99066787-1
