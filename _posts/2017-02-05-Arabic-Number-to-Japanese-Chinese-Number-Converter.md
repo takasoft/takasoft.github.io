@@ -31,7 +31,7 @@ document.getElementById('myText').onkeypress = function(e){
 </div>
 
 <br>
-<a href="https://github.com/takaosoft/arabic-to-japanese-num-c" target="_blank">Source Code</a> 
+<a href="https://github.com/takasoft/arabic-to-japanese-num-c" target="_blank">Source Code</a> 
 
 <script src="{{ site.baseurl }}/public/js/numconverter.js"></script>
 <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/public/css/numcstyle.css">
