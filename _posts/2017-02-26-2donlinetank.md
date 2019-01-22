@@ -11,4 +11,4 @@ categories:
 <p>We used a python/flask as a server and JavaScript/Phaser as a client</p>
 
 <a href="https://online-2d-tank.herokuapp.com/" target="_blank">Demo</a><br>
-<a href="https://github.com/takao42/2donlinetank" target="_blank">Source code</a>
+<a href="https://github.com/takasoft/2donlinetank" target="_blank">Source code</a>
