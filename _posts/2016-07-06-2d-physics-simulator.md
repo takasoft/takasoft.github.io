@@ -8,4 +8,4 @@ categories:
 
 A simple physics simulator using C++ with Box2D and SFML frameworks.
 
-<a href="https://github.com/takao42/Physics-Simulator" target="_blank">Source code</a>
+<a href="https://github.com/takasoft/Physics-Simulator" target="_blank">Source code</a>
