@@ -42,7 +42,7 @@ Email: takaos at iastate.edu
 - <a href="https://www.linkedin.com/in/takao-shibamoto/" target="_blank">LinkedIn</a> - my online resume
 - <a href="https://stackoverflow.com/users/7336605/takasoft" target="_blank">StackOverflow</a> - can't live without this
 - <a href="https://www.kaggle.com/takaoo" target="_blank">Kaggle</a> - Playing with some data science
-- <a href="https://devpost.com/TakaoShibamoto" target="_blank">DevPost</a> - my hackathon projects
+- <a href="https://devpost.com/takao-shibamoto" target="_blank">DevPost</a> - my hackathon projects
 - <a href="https://play.google.com/store/apps/developer?id=TakaSoft&hl=en" target="_blank">Google Play Store</a> - my android apps
 - <a href="https://twitter.com/t7akao" target="_blank">Twitter</a> - whatever stuff
 - <a href="https://www.quora.com/profile/Takao-Shibamoto" target="_blank">Quora</a> - I write mostly about Japan and computers.
