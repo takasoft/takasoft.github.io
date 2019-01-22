@@ -14,4 +14,4 @@ We thought about making something that would influence the community, and we wer
 We got a best use of Internet of Things prize from Major League Hacking for this project!
 
 <a href="https://devpost.com/software/care-taker-yumh2p" target="_blank">Project Details</a><br>
-<a href="https://github.com/takao42/hackisu2017fall" target="_blank">Source Code</a>
+<a href="https://github.com/takasoft/hackisu2017fall" target="_blank">Source Code</a>
