@@ -14,4 +14,4 @@ Demo:
 
 <a href="https://www.dropbox.com/s/qzs0v83uavphdkb/flashcardpy.zip?dl=0" target="_blank">Windows 64bit</a>
 
-<a href="https://github.com/takao42/flashcardPy" target="_blank">Source code</a>
+<a href="https://github.com/takasoft/flashcardPy" target="_blank">Source code</a>
