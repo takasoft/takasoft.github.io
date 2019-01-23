@@ -36,16 +36,13 @@ May 2017 – May 2018
 
 ### Contact
 
-Email: takaos at iastate.edu
-
-### Social Media
-
-- <a href="https://github.com/takasoft" target="_blank">GitHub</a>
-- <a href="https://www.linkedin.com/in/takao-shibamoto/" target="_blank">LinkedIn</a>
-- <a href="https://stackoverflow.com/users/7336605/takasoft" target="_blank">StackOverflow</a>
-- <a href="https://www.kaggle.com/takaoo" target="_blank">Kaggle</a>
-- <a href="https://devpost.com/takao-shibamoto" target="_blank">DevPost</a>
-- <a href="https://play.google.com/store/apps/developer?id=TakaSoft&hl=en" target="_blank">Google Play Store</a>
-- <a href="https://twitter.com/t7akao" target="_blank">Twitter</a>
-- <a href="https://www.quora.com/profile/Takao-Shibamoto" target="_blank">Quora</a>
+- Email: takaos at iastate.edu
+- Github: <a href="https://github.com/takasoft" target="_blank">@takasoft</a>
+- LinkedIn: <a href="https://www.linkedin.com/in/takao-shibamoto/" target="_blank">@takao-shibamoto</a>
+- StackOverflow: <a href="https://stackoverflow.com/users/7336605/takasoft" target="_blank">@takasoft</a>
+- Kaggle: <a href="https://www.kaggle.com/takaoo" target="_blank">@takaoo</a>
+- DevPost: <a href="https://devpost.com/takao-shibamoto" target="_blank">@takao-shibamoto</a>
+- Google Play Store: <a href="https://play.google.com/store/apps/developer?id=TakaSoft&hl=en" target="_blank">TakaSoft</a>
+- Twitter: <a href="https://twitter.com/t7akao" target="_blank">@t7akao</a>
+- Quora: <a href="https://www.quora.com/profile/Takao-Shibamoto" target="_blank">@Takao-Shibamoto</a>
 
