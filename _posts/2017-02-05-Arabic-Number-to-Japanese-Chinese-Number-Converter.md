@@ -30,6 +30,8 @@ document.getElementById('myText').onkeypress = function(e){
 </ul>
 </div>
 
+<br>
+
 - <a href="https://github.com/takasoft/arabic-to-japanese-num-c" target="_blank">Source Code</a> 
 
 <script src="{{ site.baseurl }}/public/js/numconverter.js"></script>
