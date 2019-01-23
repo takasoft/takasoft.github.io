@@ -12,6 +12,5 @@ Desktop flash card app written in Python/QT.
 Demo:
 ![flashcardpy-example.gif](/public/assets/flashcardpy-example.gif)
 
-<a href="https://github.com/takasoft/flashcardPy/releases/" target="_blank">Releases</a>
-
-<a href="https://github.com/takasoft/flashcardPy" target="_blank">Source code</a>
+- <a href="https://github.com/takasoft/flashcardPy/releases/" target="_blank">Releases</a>
+- <a href="https://github.com/takasoft/flashcardPy" target="_blank">Source code</a>
