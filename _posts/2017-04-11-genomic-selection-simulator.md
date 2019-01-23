@@ -19,6 +19,6 @@ Presentations:
 
 I made presentations at Symposium on Undergraduate Research & Creative Expression and IMSE Poster Presentation.
 
-<a href="http://lib.dr.iastate.edu/undergradresearch_symposium/2017/presentations/82/" target="_blank">Presentation Details</a><br>
-<a href="https://github.com/takasoft/GenomicSelectionSimulator" target="_blank">Source Code</a>
+- <a href="http://lib.dr.iastate.edu/undergradresearch_symposium/2017/presentations/82/" target="_blank">Presentation Details</a>
+- <a href="https://github.com/takasoft/GenomicSelectionSimulator" target="_blank">Source Code</a>
 
