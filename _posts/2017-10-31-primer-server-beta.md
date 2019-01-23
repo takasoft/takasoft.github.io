@@ -27,4 +27,4 @@ We are also currently working to make the specificity checking, which filters th
 
 Throughout this project I learned valuable skills such as making layered code structures by using block diagrams, full stack development using Python/Flask and Angular2, and continuous collaboration. I will be presenting <a href="https://ncurdb.cur.org/ncur2018/search/Display_NCUR.aspx?id=107828" target="_blank">this work</a> at <a href="https://www.cur.org/conferences_and_events/student_events/ncur/" target="_blank">the National Conferences on Undergraduate Research</a> at University of Central Oklahoma this April.
 
-<a href="https://vollbrechtlab.gdcb.iastate.edu/tools/primer-server/" target="_blank">Official Site</a>
+- <a href="https://vollbrechtlab.gdcb.iastate.edu/tools/primer-server/" target="_blank">Official Site</a>
