@@ -17,4 +17,4 @@ The results are saved as as a csv file. It looks like the following picture.
 
 ![imagej-pollen-result-csv]({{ site.baseurl }}/public/assets/imagej-pollen-result-csv.png)
 
-<a href="https://github.com/vollbrechtlab/imagej-pollen" target="_blank">Source Code</a>
+- <a href="https://github.com/vollbrechtlab/imagej-pollen" target="_blank">Source Code</a>
