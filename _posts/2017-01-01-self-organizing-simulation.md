@@ -21,7 +21,7 @@ This is a self organization algorithm test using Kohonen's self-organizing map t
 5. What a magic! Cells start organizing colors by themselves with this simple algorithm.
 
 
-<a href="https://github.com/takasoft/self-organizing-simulation" target="_blank">Source Code</a> 
+- <a href="https://github.com/takasoft/self-organizing-simulation" target="_blank">Source Code</a> 
 
 <script src="{{ site.baseurl }}/public/js/phaser.min.js"></script>
 <script src="{{ site.baseurl }}/public/js/selfOrganizing.js"></script>
