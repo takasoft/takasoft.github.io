@@ -1,10 +1,10 @@
 ---
 layout: page
-title: About Me
+title: About
 permalink: /about/
 ---
 
-Hi.
+Hello. Thank you for visiting my page.
 
 My name is Takao Shibamoto and I live in Iowa, USA.
 
@@ -32,6 +32,12 @@ May 2017 – May 2018
 
 - Developed several bioinformatics applications, most notably genome primer design web app called Primer Server with graduate student (Python, Angular)
 - Made presentation at National Conferences on Undergraduate Research on April 2018
+
+### Skills
+
+- Python, JavaScript, C/C++, Java, SQL, Bash
+- Linux, WebDev, NetSec, Docker, Data Mining, Automation
+- Piano, Shogi (Japanese Chess)
 
 
 ### Contact
