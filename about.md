@@ -49,6 +49,6 @@ May 2017 – May 2018
 - Kaggle: <a href="https://www.kaggle.com/takasoft" target="_blank">@takasoft</a>
 - DevPost: <a href="https://devpost.com/takao-shibamoto" target="_blank">@takao-shibamoto</a>
 - Google Play Store: <a href="https://play.google.com/store/apps/developer?id=TakaSoft&hl=en" target="_blank">TakaSoft</a>
-- Twitter: <a href="https://twitter.com/t7akao" target="_blank">@t7akao</a>
+- Twitter: <a href="https://twitter.com/takas0ft" target="_blank">@takas0ft</a>
 - Quora: <a href="https://www.quora.com/profile/Takao-Shibamoto" target="_blank">@Takao-Shibamoto</a>
 
