@@ -7,6 +7,7 @@ tagline:          Making awesome software
 description:      Making awesome software
 url:              
 baseurl:          
+headline:         My name is Takao Shibamoto, a computer engineering student at Iowa State University. 
 
 # Pagination number
 paginate:         10
@@ -23,5 +24,3 @@ defaults:
       type: category
     values:
       layout: "category"
-
-google_analytics: UA-99066787-1

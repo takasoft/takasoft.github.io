@@ -3,6 +3,15 @@ layout: default
 title: Home
 ---
 
+{% if site.headline %}
+<div>
+  {{ site.headline }}<br>
+  <a href="{{ site.baseurl }}/about">Learn more about me here.</a>
+  <hr>
+  <br>
+</div>
+{% endif %}
+
 <div class="posts">
   {% for post in paginator.posts %}
   <div class="post">
