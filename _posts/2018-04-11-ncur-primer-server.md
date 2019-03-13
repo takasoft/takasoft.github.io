@@ -22,9 +22,7 @@ There were 4000+ participants of students, faculty and university staff from all
 
 It was a truely facinating experience to talk to various presenters and widen my perspective.
 
-The tool is currently available <a href="http://18.219.153.20/primer-server" target="_blank">here</a>. It is still work in progress and the updates are made constantly.
-
-The source code is up on <a href="https://github.com/vollbrechtlab" target="_blank">our GitHub repo</a>.
+The source code is up on <a href="https://github.com/vollbrechtlab/primer-server" target="_blank">our GitHub repo</a>.
 
 Here is the actual poster I presented. Click image to download.
 
