@@ -23,7 +23,7 @@ May 2018 – August 2018
 ### University Work Experience at Iowa State
 
 **Lab Assistant - Embedded Systems (CPRE288)**<br>
-August 2018 – Present
+August 2018 – December 2018
 
 - Lead several lab sections which focus on Embedded C programming with Roomba.
 
