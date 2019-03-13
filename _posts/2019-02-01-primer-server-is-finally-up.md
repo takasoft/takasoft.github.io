@@ -1,13 +1,13 @@
 ---
 layout: post
-title: Poster about Primer Server at NCUR
+title: Primer Server is now officially up!
 categories:
   - app
   - research
   - news
 ---
 
-I'm excited to announce that Primer Server we developed at Vollbrecht Lab is finally up on the oficial site.
+I'm excited to announce that Primer Server we developed at Vollbrecht Lab is finally up on the Iowa State website.
 
 <a href="https://primer-server.gdcb.iastate.edu" target="_blank">primer-server.gdcb.iastate.edu</a>
 
