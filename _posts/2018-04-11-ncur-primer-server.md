@@ -16,7 +16,7 @@ Primer Server is a web application to design PCR primer with a user-friendly GUI
 
 PCR is a laboratory technique to amplify a specific part of DNA/RNA. A primer is a short strand of DNA/RNA that serves as a starting point for DNA replication. Two primers (left and right) are used since PCR happens from both ways. 
 
-Being able to amplify a specific part of DNA/RNA means that researchers can find infection such as AIDS or they can transport the specific feature of one living organizm to other such as disease resistance.
+Being able to amplify a specific part of DNA/RNA means that researchers can find infection such as AIDS or they can transport the specific feature of one living organism to another to increase disease resistance.
 
 There were 4000+ participants of students, faculty and university staff from all over the country.
 
