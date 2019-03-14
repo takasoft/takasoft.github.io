@@ -4,12 +4,12 @@
   <p class="simple-footer" align="center">&copy; {{ site.time | date: '%Y' }} <a class="simple-footer" href="{{ site.baseurl }}/">{{ site.title }}</a></p>
 
   <!-- Bootstrap JS -->
-  <script src="{{ site.baseurl }}/system/js/jquery-3.2.1.min.js"></script>
-	<script src="{{ site.baseurl }}/system/js/tether.min.js"></script>
-  <script src="{{ site.baseurl }}/system/js/bootstrap.min.js"></script>
+  <script src="{{ site.baseurl }}/system/js/jquery-3.3.1.min.js"></script>
+	<script src="{{ site.baseurl }}/system/js/tether-1.3.3.min.js"></script>
+  <script src="{{ site.baseurl }}/system/js/bootstrap-4.3.1.min.js"></script>
 
   {% if site.google_analytics %}
-	<!-- Google Analytics -->
+	<!-- Google Analytics Script -->
 	<script>
 		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -22,8 +22,6 @@
 		  'title': '{{ page.title | replace: "'", "\\'" }}'
 		});
 	</script>
-	<!-- End Google Analytics -->
   {% endif %}
 
 </footer>
-<!--/.Footer-->

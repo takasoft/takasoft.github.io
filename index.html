@@ -5,9 +5,8 @@ title: Home
 
 {% if site.headline %}
 <div class="post">
-  {{ site.headline }}<br>
-  <a href="{{ site.baseurl }}/about">Learn more about me here.</a>
-  <hr>
+    {% include headline.html %}
+    <hr>
 </div>
 {% endif %}
 

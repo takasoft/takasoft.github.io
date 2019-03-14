@@ -208,3 +208,8 @@ img.postthumbnail {
 .google-play-badge {
   max-width:300px;
 }
+
+.navbar-custom {
+  padding-bottom: 0px; 
+  margin-bottom: -30px;
+}

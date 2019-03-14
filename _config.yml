@@ -8,7 +8,10 @@ description:      Making awesome software
 url:              
 baseurl:          
 rawurl:           https://github.com/takasoft/takasoft.github.io/raw/master
-headline:         My name is Takao Shibamoto, a computer engineering student at Iowa State University. 
+# Add this and create headline.html in _includes directory
+headline: true         
+# Add your google_analytics ID if you need it
+# google_analytics: 
 
 # Pagination number
 paginate:         10
