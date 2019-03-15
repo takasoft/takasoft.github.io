@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 
-Hello. Thank you for visiting my page.
+Hello. Thank you for visiting my page!
 
 My name is Takao Shibamoto and I live in Iowa, USA.
 
@@ -36,9 +36,12 @@ May 2017 – May 2018
 ### Skills
 
 - Python, JavaScript, C/C++, Java, SQL, Bash
-- Linux, WebDev, NetSec, Docker, Data Mining, Automation
+- Linux, Web Development, Network Security, Docker, Hadoop, Data Mining, Automation
 - Piano, Shogi (Japanese Chess)
 
+### Resume/CV
+
+Please [click here](https://github.com/takasoft/takasoft.github.io/raw/master/public/assets/resume.pdf) to download
 
 ### Contact
 
