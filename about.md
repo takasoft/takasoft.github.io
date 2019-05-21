@@ -20,18 +20,26 @@ May 2018 – August 2018
 - Developed scripts to automate various firewall/panorama operations.
 - Developed web applications (Python/Angular) for internal IT ticket systems.
 
-### University Work Experience at Iowa State
-
-**Lab Assistant - Embedded Systems (CPRE288)**<br>
-August 2018 – December 2018
-
-- Lead several lab sections which focus on Embedded C programming with Roomba.
+### Research Experience
 
 **Software Research Assistant - Vollbrecht Lab**<br>
 May 2017 – May 2018
 
-- Developed several bioinformatics applications, most notably genome primer design web app called Primer Server with graduate student (Python, Angular)
-- Made presentation at National Conferences on Undergraduate Research on April 2018
+- Developed several bioinformatics applications, most notably genome primer design web app called [Primer Server](https://github.com/vollbrechtlab/primer-server) with graduate student (Python, Angular).
+- [Made presentation](https://takasoft.github.io/ncur-primer-server) at National Conferences on Undergraduate Research on April 2018.
+
+**Independent Study - Plant Breeding**<br>
+Jan 2017 - May 2017
+
+- Developed a GUI tool to simulate genomic selection: [Genomic Selection Simulator](https://github.com/takasoft/GenomicSelectionSimulator). 
+- Throughout this study, I learned a smart way of processing genome data using matrix transformations.
+
+### Other Experience
+
+**Lab Teaching Assistant - Embedded Systems**<br>
+August 2018 – December 2018
+
+- Supported students in learning embedded C programming in CPRE 288 lab.
 
 ### Skills
 
