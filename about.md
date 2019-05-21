@@ -39,7 +39,7 @@ Jan 2017 - May 2017
 **Lab Teaching Assistant - Embedded Systems**<br>
 August 2018 – December 2018
 
-- Supported students in learning embedded C programming in CPRE 288 lab.
+- Supported students in learning embedded C programming in [CPRE 288](http://class.ece.iastate.edu/cpre288/) lab.
 
 ### Skills
 
