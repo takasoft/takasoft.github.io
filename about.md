@@ -34,12 +34,17 @@ Jan 2017 - May 2017
 - Developed a GUI tool to simulate genomic selection: [Genomic Selection Simulator](https://github.com/takasoft/GenomicSelectionSimulator). 
 - Throughout this study, I learned a smart way of processing genome data using matrix transformations.
 
-### Other Experience
+### Leadership Experience
 
 **Lab Teaching Assistant - Embedded Systems**<br>
 August 2018 – December 2018
 
 - Supported students in learning embedded C programming in [CPRE 288](http://class.ece.iastate.edu/cpre288/) lab.
+
+**Academic Tutor - Digital Logic**<br>
+January 2018 – May 2018
+
+-  Taught concepts such as boolean algebra, finite state machine, and designs of simple computers to groups of 5 tutees.
 
 ### Skills
 
