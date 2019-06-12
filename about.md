@@ -17,15 +17,16 @@ Outside of my study, I create my own software as a hobby, participate in hackath
 **Software Engineering Intern (Network Security), PayPal**<br>
 May 2018 – August 2018
 
-- Developed scripts to automate various firewall/panorama operations.
-- Developed web applications (Python/Angular) for internal IT ticket systems.
+- Developed a web application (Python, Angular) to make it easier for customers to submit IT tickets.
+- Developed Python scripts to automate various firewall/panorama operations.
+- Manipulated/Analyzed data from Palo Alto Networks/Splunk/AlgoSec APIs
 
 ### Research Experience
 
 **Software Research Assistant - Vollbrecht Lab**<br>
 May 2017 – May 2018
 
-- Developed several bioinformatics applications, most notably genome primer design web app called [Primer Server](https://github.com/vollbrechtlab/primer-server) with graduate student (Python, Angular).
+- Developed several bioinformatics applications with a graduate student, most notably a PCR primer design web application called [Primer Server](https://github.com/vollbrechtlab/primer-server) (Python, Angular).
 - [Made presentation](https://takasoft.github.io/ncur-primer-server) at National Conferences on Undergraduate Research on April 2018.
 
 **Independent Study - Plant Breeding**<br>
@@ -51,10 +52,6 @@ January 2018 – May 2018
 - Python, JavaScript, C/C++, Java, SQL, Bash
 - Linux, Web Development, Network Security, Docker, Hadoop, Data Mining, Automation
 - Piano, Shogi (Japanese Chess)
-
-### Resume/CV
-
-Please [click here](https://github.com/takasoft/takasoft.github.io/raw/master/public/assets/resume.pdf) to download
 
 ### Contact
 
