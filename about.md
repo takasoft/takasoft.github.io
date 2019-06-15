@@ -8,7 +8,7 @@ Hello. Thank you for visiting my page!
 
 My name is Takao Shibamoto and I live in Iowa, USA.
 
-I am pursuing B.S. in Computer Engineering with a minor in Cyber Security. I plan to graduate on December 2019. Upon graduation, I want to become a data scientist with strong knowledge in Infomation Security.
+I am pursuing B.S. in Computer Engineering with a minor in Cyber Security. I plan to graduate on December 2019. Upon graduation, I want to become a data engineer/scientist with strong knowledge in Information Security.
 
 Outside of my study, I create my own software as a hobby, participate in hackathons with my friends, and enjoy solving data science problems and competitive programming problems.
 
@@ -18,8 +18,7 @@ Outside of my study, I create my own software as a hobby, participate in hackath
 May 2018 – August 2018
 
 - Developed a web application (Python, Angular) to make it easier for customers to submit IT tickets.
-- Developed Python scripts to automate various firewall/panorama operations.
-- Manipulated/Analyzed data from Palo Alto Networks/Splunk/AlgoSec APIs
+- Developed Python scripts to automate various network security operations (backup/restore of multiple Firewall/Panorama/SBC, finding unused application objects, etc.)
 
 ### Research Experience
 
@@ -49,15 +48,15 @@ January 2018 – May 2018
 
 ### Skills
 
-- Python, JavaScript, C/C++, Java, SQL, Bash
-- Linux, Web Development, Network Security, Docker, Hadoop, Data Mining, Automation
-- Piano, Shogi (Japanese Chess)
+- Languages: Python, JavaScript, SQL, C/C++, Java.
+- Tools/Frameworks: Linux, Angular, Flask/Django, NetSec device APIs, Docker, Hadoop/Spark.
+- Hobby: Piano, Shogi (Japanese Chess), Playing/programming video games.
 
 ### Contact
 
 - Email: takaos at iastate.edu
 - Github: <a href="https://github.com/takasoft" target="_blank">@takasoft</a>
-- LinkedIn: <a href="https://www.linkedin.com/in/takao-shibamoto/" target="_blank">@takao-shibamoto</a>
+- LinkedIn: <a href="https://www.linkedin.com/in/takao-shibamoto/" target="_blank">takao-shibamoto</a>
 - StackOverflow: <a href="https://stackoverflow.com/users/7336605/takasoft" target="_blank">@takasoft</a>
 - Kaggle: <a href="https://www.kaggle.com/takasoft" target="_blank">@takasoft</a>
 - DevPost: <a href="https://devpost.com/takao-shibamoto" target="_blank">@takao-shibamoto</a>
