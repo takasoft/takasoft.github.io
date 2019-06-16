@@ -49,7 +49,7 @@ January 2018 – May 2018
 ### Skills
 
 - Languages: Python, JavaScript, SQL, C/C++, Java.
-- Tools/Frameworks: Linux, Angular, Flask/Django, NetSec device APIs, Docker, Hadoop/Spark.
+- Tools/Frameworks: Linux, Flask, Angular, NetSec device APIs, Docker, Hadoop/Spark.
 - Hobby: Piano, Shogi (Japanese Chess), Playing/programming video games.
 
 ### Contact
