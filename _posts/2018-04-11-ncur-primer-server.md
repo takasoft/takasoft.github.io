@@ -26,4 +26,4 @@ The source code is up on <a href="https://github.com/vollbrechtlab/primer-server
 
 Here is the actual poster I presented. Click image to download.
 
-<a href="{{site.baseurl}}/public/assets/takao-ncur-final.pdf"><img border="0" alt="ncur poster" src="{{site.baseurl}}/public/assets/takao-ncur-final.jpg"></a>
+<a href="{{ site.url }}{{site.baseurl}}/public/assets/takao-ncur-final.pdf"><img border="0" alt="ncur poster" src="{{ site.url }}{{site.baseurl}}/public/assets/takao-ncur-final.jpg"></a>

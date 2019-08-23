@@ -7,7 +7,7 @@ layout: default
   {% if page.image %}
   	{% if page.hideTnPost %}
     {% else %}
-      <img src="{{ site.baseurl }}{{ page.image }}" class="postthumbnail">
+      <img src="{{ site.url }}{{ site.baseurl }}{{ page.image }}" class="postthumbnail">
     {% endif%}
     <br>
   {% endif %}
@@ -21,7 +21,7 @@ layout: default
     <span class="post-category">
       {% for category in page.categories %}
         <i class="genericons-neue genericons-neue-category"></i>
-        <a class="post-category-link" href="{{ site.baseurl }}/category/{{ category }}">
+        <a class="post-category-link" href="{{ site.url }}{{ site.baseurl }}/category/{{ category }}">
           {{ category }}
         </a>
       {% endfor %}
@@ -40,7 +40,7 @@ layout: default
           {% unless post.title == page.title %}
           	<li class="related-post">
 	           	<h4>
-		            <a class="related-post" href="{{ site.baseurl }}{{ post.url }}">
+		            <a class="related-post" href="{{ site.url }}{{ site.baseurl }}{{ post.url }}">
 		              {{ post.title }}
 		              <small>{{ post.date | date: "%Y-%m-%d" }}</small>
 		            </a>

@@ -13,12 +13,12 @@ title: Home
 <div class="posts">
   {% for post in paginator.posts %}
   <div class="post">
-    <a href="{{ site.baseurl }}{{ post.url }}">
+    <a href="{{ site.url }}{{ site.baseurl }}{{ post.url }}">
       <h1 class="post-title">
           {{ post.title }}
       </h1>
       {% if post.image %}
-        <img src="{{ site.baseurl }}{{ post.image }}" class="homethumbnail"><br>
+        <img src="{{ site.url }}{{ site.baseurl }}{{ post.image }}" class="homethumbnail"><br>
       {% endif %}
     </a>
 
@@ -32,7 +32,7 @@ title: Home
       <span class="post-category">
         {% for category in post.categories %}
           <i class="genericons-neue genericons-neue-category"></i>
-          <a class="post-category" href="{{ site.baseurl }}/category/{{ category }}">
+          <a class="post-category" href="{{ site.url }}{{ site.baseurl }}/category/{{ category }}">
             {{ category }}
           </a>
         {% endfor %}
@@ -43,7 +43,7 @@ title: Home
       {{ post.excerpt }}
     </div>
 
-    <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read more</a>
+    <a href="{{ site.url }}{{ site.baseurl }}{{ post.url }}" class="read-more">Read more</a>
   </div>
   <hr>
   {% endfor %}
@@ -55,40 +55,40 @@ title: Home
     {% if paginator.previous_page %}
       {% if paginator.page == 2 %}
         <li class="page-item">
-          <a class="page-link" href="{{ site.baseurl }}/">
+          <a class="page-link" href="{{ site.url }}{{ site.baseurl }}/">
             <i class="genericons-neue genericons-neue-previous"></i>
           </a>
         </li>
       {% else %}
         <li class="page-item">
-          <a class="page-link" href="{{ site.baseurl }}/page{{paginator.previous_page}}">
+          <a class="page-link" href="{{ site.url }}{{ site.baseurl }}/page{{paginator.previous_page}}">
             <i class="genericons-neue genericons-neue-previous"></i>
           </a>
         </li>
       {% endif %}
     {% else %}
       <li class="page-item disabled">
-        <a class="page-link" href="{{ site.baseurl }}/">
+        <a class="page-link" href="{{ site.url }}{{ site.baseurl }}/">
           <i class="genericons-neue genericons-neue-previous"></i>
         </a>
       </li>
     {% endif %}
 
     <li class="page-item disabled">
-      <a class="page-link" href="{{ site.baseurl }}/">
+      <a class="page-link" href="{{ site.url }}{{ site.baseurl }}/">
         Page {{ paginator.page }} / {{ paginator.total_pages }}
       </a>
     </li>
 
     {% if paginator.next_page %}
       <li class="page-item">
-        <a class="page-link" href="{{ site.baseurl }}/page{{paginator.next_page}}">
+        <a class="page-link" href="{{ site.url }}{{ site.baseurl }}/page{{paginator.next_page}}">
           <i class="genericons-neue genericons-neue-next"></i>
         </a>
       </li>
     {% else %}
       <li class="page-item disabled">
-        <a class="page-link" href="{{ site.baseurl }}/">
+        <a class="page-link" href="{{ site.url }}{{ site.baseurl }}/">
           <i class="genericons-neue genericons-neue-next"></i>
         </a>
       </li>

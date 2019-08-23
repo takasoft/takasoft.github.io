@@ -34,5 +34,5 @@ document.getElementById('myText').onkeypress = function(e){
 
 - <a href="https://github.com/takasoft/arabic-to-japanese-num-c" target="_blank">Source Code</a> 
 
-<script src="{{ site.baseurl }}/public/js/numconverter.js"></script>
-<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/public/css/numcstyle.css">
+<script src="{{ site.url }}{{ site.baseurl }}/public/js/numconverter.js"></script>
+<link rel="stylesheet" type="text/css" href="{{ site.url }}{{ site.baseurl }}/public/css/numcstyle.css">

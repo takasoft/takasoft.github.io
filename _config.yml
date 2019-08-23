@@ -5,8 +5,8 @@ permalink:        /:title
 title:            TakaSoft
 tagline:          Making awesome software
 description:      Making awesome software
-url:              
-baseurl:          https://takasoft.github.io
+url:              https://takasoft.github.io
+baseurl:          
 rawurl:           https://github.com/takasoft/takasoft.github.io/raw/master
 # Add this and create headline.html in _includes directory
 headline: true         
