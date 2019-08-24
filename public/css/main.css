@@ -233,3 +233,32 @@ img.postthumbnail {
 .story-title {
   text-align:center;
 }
+
+.project-caption {
+  /* max-width: 700px;  */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  -webkit-filter: blur(3px) brightness(50%); /* Safari 6.0 - 9.0 */
+  filter: blur(3px) brightness(50%);
+  /* filter: brightness(50%); */
+}
+
+.carousel-caption h5 p {
+  color: #000;
+}
+
+.bg-slightly-dark {
+  background-color: #d6d6d6;
+}
+
+.carousel-control-prev {
+  background-color: #757575;
+  margin-bottom: 17px;
+}
+
+.carousel-control-next {
+  background-color: #757575;
+  /* padding-bottom: 20px; */
+  margin-bottom: 17px;
+}
