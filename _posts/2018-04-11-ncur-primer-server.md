@@ -24,6 +24,8 @@ It was a truely facinating experience to talk to various presenters and widen my
 
 The source code is up on <a href="https://github.com/vollbrechtlab/primer-server" target="_blank">our GitHub repo</a>.
 
+2019-02-01 Update: <a href="{{ site.url }}{{site.baseurl}}/primer-server-is-now-officially-up">Primer Server is up on the Iowa State site.<a/>
+
 Here is the actual poster I presented. Click image to download.
 
 <a href="{{ site.url }}{{site.baseurl}}/public/assets/takao-ncur-final.pdf"><img border="0" alt="ncur poster" src="{{ site.url }}{{site.baseurl}}/public/assets/takao-ncur-final.jpg"></a>
