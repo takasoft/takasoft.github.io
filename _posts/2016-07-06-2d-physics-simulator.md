@@ -3,7 +3,7 @@ layout: post
 title: 2D Physics Simulator
 image: /public/assets/my-2d-physics-simulator.png
 categories:
-  - app
+  - project
 ---
 
 A simple physics simulator using C++ with Box2D and SFML frameworks.

@@ -3,9 +3,7 @@ layout: post
 title: Poster about Primer Server at NCUR
 image: /public/assets/ncur-poster.jpg
 categories:
-  - app
-  - research
-  - news
+  - project
 ---
 
 I presented a poster about Primer Server at <a href="https://www.cur.org/conferences_and_events/student_events/ncur_2018/" target="_blank">the National Conferences on Undergraduate Research</a> at University of Central Oklahoma last week.

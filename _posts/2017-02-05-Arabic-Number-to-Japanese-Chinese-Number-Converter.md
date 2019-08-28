@@ -4,7 +4,7 @@ title: Arabic Number to Japanese/Chinese Number Converter
 image: /public/assets/number-converter.png
 hideTnPost: y
 categories:
-  - app
+  - project
 ---
 
 This program converts an Arabic number to a Japanese/Chinese number.

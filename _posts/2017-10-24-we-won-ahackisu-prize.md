@@ -1,10 +1,9 @@
 ---
 layout: post
-title: Care Taker
+title: We Won a HackISU Prize!
 image: /public/assets/care-taker-screenshot.png
 categories:
-  - app
-  - hackathon
+  - project
 ---
 
 A HackISU fall 2017 project: Care Taker
@@ -15,3 +14,4 @@ We got a best use of Internet of Things prize from Major League Hacking for this
 
 - <a href="https://devpost.com/software/care-taker-yumh2p" target="_blank">Project Details</a>
 - <a href="https://github.com/takasoft/hackisu2017fall" target="_blank">Source Code</a>
+- <a href="https://twitter.com/MLHacks/status/922178438013833218" target="_blank">Major League Hacking Tweet</a>

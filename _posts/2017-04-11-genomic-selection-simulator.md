@@ -3,8 +3,7 @@ layout: post
 title: Genomic Selection Simulator
 image: /public/assets/genomic-selection-simulator-screenshot.png
 categories:
-  - app
-  - research
+  - project
 ---
 
 Genomic selection simulation that helps plant breeders predict plants with the best genomes

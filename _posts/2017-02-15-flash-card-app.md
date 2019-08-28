@@ -4,7 +4,7 @@ title: Flash Card App
 image: /public/assets/flashcardpy-example.png
 hideTnPost: y
 categories:
-  - app
+  - project
 ---
 
 Desktop flash card app written in Python/QT.

@@ -1,12 +1,12 @@
 ---
 layout: post
-title: Simple Pong
+title: Testing out Godot Engine
 image: /public/assets/simple-pong-screenshot.png
 categories:
-  - app
+  - project
 ---
 
-Simple Ping Pong Game using Godot Engine
+I developed a simple pong game using Godot Engine.
 
 Control:<br>
 K - Up<br>

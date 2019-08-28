@@ -2,7 +2,7 @@
 layout: post
 title: Senior Design Project Started
 categories:
-  - news
+  - project
 ---
 
 We started a senior design project titled "Artificial Intelligent Requirement Analysis Tools", an yearlong project with Collins Aerospace. 

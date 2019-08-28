@@ -4,7 +4,7 @@ title: Self Organization Simulation
 image: /public/assets/self-organization-test.png
 hideTnPost: y
 categories:
-  - app
+  - project
 ---
 
 This is a self organization algorithm test using Kohonen's self-organizing map theory.

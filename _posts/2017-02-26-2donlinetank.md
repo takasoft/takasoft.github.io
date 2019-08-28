@@ -3,8 +3,7 @@ layout: post
 title: 2D Online Tank
 image: /public/assets/2d-online-tank-screenshot.png
 categories:
-  - app
-  - hackathon
+  - project
 ---
 
 <p>This is a HackISU Spring 2017 project we did.</p>

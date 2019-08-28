@@ -2,9 +2,7 @@
 layout: post
 title: Primer Server is now officially up!
 categories:
-  - app
-  - research
-  - news
+  - project
 ---
 
 I'm excited to announce that Primer Server we developed at Vollbrecht Lab is finally up on the Iowa State website.

@@ -3,7 +3,7 @@ layout: post
 title: Ball 2D Physics
 image: /public/assets/ball-2d-physics-screenshot.jpg
 categories:
-  - app
+  - project
 ---
 
 A colorful ball 2D physics game using C++ with Box2D and SFML frameworks.

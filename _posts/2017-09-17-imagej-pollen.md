@@ -3,8 +3,7 @@ layout: post
 title: Pollen molecule filtering ImageJ plugin
 image: /public/assets/pollen-example.png
 categories:
-  - app
-  - research
+  - project
 ---
 
 Automatic pollen molecule image filtering on multiple pollen images.

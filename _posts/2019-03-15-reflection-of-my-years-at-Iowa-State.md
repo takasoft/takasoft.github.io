@@ -2,7 +2,7 @@
 layout: post
 title: Reflection of My Years at Iowa State
 categories:
-  - reflection
+  - essay
 ---
 
 In CPRE494 Portfolio Assessment, I wrote two reflections about my years at Iowa State University.

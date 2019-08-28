@@ -3,9 +3,7 @@ layout: post
 title: Primer Server Beta Testing
 image: /public/assets/primer-server-input-screenshot.png
 categories:
-  - app
-  - research
-  - news
+  - project
 ---
 
 A PCR genome primer designer with a user-friendly graphical interface.

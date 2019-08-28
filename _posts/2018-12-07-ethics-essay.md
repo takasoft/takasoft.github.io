@@ -2,7 +2,7 @@
 layout: post
 title: Ethics Essay
 categories:
-  - reflection
+  - essay
 ---
 
 In CPRE 394 Program Exploration, we attended a group meeting with faculty discussing issues of ethics in engineering. Here is my essay after the discussion.
