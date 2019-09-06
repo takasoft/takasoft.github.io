@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Testing out Godot Engine
+title: Testing out Unity
 image: /public/assets/simple-snake-logo.png
 categories:
   - project
