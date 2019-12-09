@@ -3,8 +3,8 @@ permalink:        /:title
 
 # Setup
 title:            TakaSoft
-tagline:          Making awesome software
-description:      Making awesome software
+tagline:          
+description:      A blog by Takao Shibamoto, a Computer Engineering student at Iowa State.
 url:              https://takasoft.github.io
 baseurl:          
 rawurl:           

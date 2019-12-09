@@ -63,7 +63,7 @@ category: new-category-name
 
 ## Local Development
 
-Install Ruby and Gem
+Install Ruby and Gem (On Ubuntu, run `sudo apt-get install build-essential patch ruby ruby-dev zlib1g-dev liblzma-dev`)
 
 ```shell
 gem install jekyll bundler
