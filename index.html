@@ -31,14 +31,6 @@ title: Home
             {{ post.date | date: "%Y-%m-%d" }}
           </time>
         </span>
-        <span class="post-category">
-          {% for category in post.categories %}
-            <i class="fa fa-folder"></i>
-            <a class="post-category" href="{{ site.url }}{{ site.baseurl }}/category/{{ category }}">
-              {{ category }}
-            </a>
-          {% endfor %}
-        </span>
       </div>
   
       <div class="entry">
