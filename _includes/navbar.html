@@ -24,20 +24,6 @@
             {% endif %}
           {% endif %}
         {% endfor %}
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="{{ site.url }}{{ site.baseurl }}/category/" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Category
-          </a>
-          <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-            {% for category in site.categories %}
-              {% assign myCategory = category | first %}
-                <a class="dropdown-item {% if page.category == myCategory %}active{% endif %}" href="{{ site.url }}{{ site.baseurl }}/category/{{ myCategory }}">
-                  {{ myCategory }}
-                </a>
-            {% endfor %}
-          </div>
-
-        </li>
       </ul>
     </div>
   </div>
