@@ -258,6 +258,37 @@ img.postthumbnail {
   margin-bottom: 17px;
 }
 
+/* .bg-takao {
+  background: linear-gradient(90deg, #00d2ff, #928DAB);
+} */
+
 .bg-takao {
   background: linear-gradient(90deg, #00d2ff, #928DAB);
+  background-size: 400% 400%;
+
+  -webkit-animation: TakaoBG 5s ease infinite;
+  -moz-animation: TakaoBG 5s ease infinite;
+  -o-animation: TakaoBG 5s ease infinite;
+  animation: TakaoBG 5s ease infinite;
+}
+
+@-webkit-keyframes TakaoBG {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+@-moz-keyframes TakaoBG {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+@-o-keyframes TakaoBG {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+@keyframes TakaoBG {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
 }
