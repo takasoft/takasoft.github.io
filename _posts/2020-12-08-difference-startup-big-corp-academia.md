@@ -1,17 +1,20 @@
 ---
 layout: post
-title: How's it different working at a startup vs large corp vs academia?
+title: How does working at a startup compare to working at a big corp or academia?
 ---
+
+There's a huge difference among a startup, large corp and academia and I wanted to share some of my experiences.
+
  
 It's been a while since I wrote a blog post. I've been crazy busy and had so much learning over the past few years. Especially this year, 2020's been a crazy year for me and everyone else. Ever since pandemic started, I've been working from home and this lifestyle became a norm, which I would have never imagined would happen so early in my life.  Becoming a digital nomad has been my goal since I'm a teenager and I feel I'm getting really close.
  
 When I graduated, I applied for multiple jobs. I initially struggled. I wasn't so good at white board coding interviews, so I failed multiple software engineering interviews even tho I already had some software engineering experience. Also the projects I had worked on were so small compared to real software engineering projects. I have more experience working with large scale systems now, but at that time, the systems I worked on are either entirely created by myself or worked with one other person. I didn't have enough software design experiences. Luckily I also never give up until I get something so I eventually started getting offers and I decided to work at a startup since they liked my experience and my willingness to learn new things.
+
+I've worked at three different types of organizations so far: Academia, large corp, and then a startup. 
  
-Anyway, I've worked at three different types of organizations so far: Academia, large corp, and then a startup where I currently work.
+Now let's compare a startup to a large corporation and academia.
  
-There's a huge difference among these three and I wanted to share some of my experiences.
- 
-First, startup, since I have the most fresh memory.  A startup grows so fast and you will be required to work multiple different roles because the team is always short staffed. When I joined my current company, there was about 80 employees and about 20 of them were engineers. Now, we have over 200 full time employees and many more contractors. The engineering team grew so much too. This all happened in the short period of 10 months since I joined this February. 
+A startup grows so fast and you will be required to work multiple different roles because the team is always short staffed. When I joined my current company, there was about 80 employees and about 20 of them were engineers. Now, we have over 200 full time employees and many more contractors. The engineering team grew so much too. This all happened in the short period of 10 months since I joined this February. 
  
 My team, which deals with B2B businesses, has changed so much too. When I joined the company didn't really have a huge enterprise focus, but as COVID-19 started spreading the whole paradigm has changed. Someone made a meme about "Who led the digital transformation of your company?" but seriously this is true.  The whole world has been forced to transform their work environment in such a way that ppl can work remotely.  This has also sparked a trend of at-home lab testing, which has been slowly becoming popular. We started partnering with hundreds of corporations and universities and we are now helping so many ppl get tested for COVID-19.
  
