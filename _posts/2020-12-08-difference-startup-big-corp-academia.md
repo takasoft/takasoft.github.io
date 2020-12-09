@@ -15,7 +15,7 @@ First, startup, since I have the most fresh memory.  A startup grows so fast and
 
 My team, which deals with B2B businesses, has changed so much too. When I joined the company didn't really have huge enterprise focus, but as COVID-19 started spreading the whole paradigm has changed. Someone made a meme about "Who led the digital transformation of your company?" but seriously this is true.  The whole world has been forced to transform their work environment in such a way that ppl can work remotely.  This has also sparked a trend of at-home lab testing, which has been slowly becoming popular. We started partnering with hundreds of cooporations and universities and we are now helping so many ppl get tested for COVID-19.
 
-The amount of workload has been crazy for me but on the other hand I also learned so much about software engineering.
+The amount of workload has been crazy for me but on the other hand I also learned so much about software engineering including business aspects of it.
 
 Working at a startup means you will be forced to move fast. Often times deals are made suddenly and you are forced to switch priorities multiple times even in the same month. It's frustrating and context switching is very hard, but it also means that you will be in charge of multiple different projects in a very short period of time.  You will be directly making impact to the world too and you will definitely feel it.  This is one thing I like about working at a startup.  
 
