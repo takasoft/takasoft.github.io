@@ -1,7 +1,6 @@
 ---
 layout: post
 title: Poster about Primer Server at NCUR
-image: /public/assets/ncur-poster.jpg
 categories:
   - project
 ---
