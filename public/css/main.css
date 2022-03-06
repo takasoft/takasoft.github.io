@@ -263,7 +263,7 @@ img.postthumbnail {
 } */
 
 .bg-takao {
-  background: linear-gradient(90deg, #00d2ff, #928DAB);
+  background: linear-gradient(90deg, #944BFF, #928DAB);
   background-size: 400% 400%;
 
   -webkit-animation: TakaoBG 5s ease infinite;
