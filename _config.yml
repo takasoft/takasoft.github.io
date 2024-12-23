@@ -4,8 +4,8 @@ permalink:        /blog/:title
 # Setup
 title:            TakaSoft
 tagline:          
-description:      A blog by Takao Shibamoto, an engineer and a world traveler
-url:              https://takasoft.github.io
+description:      Home page of Takao Shibamoto, a software engineer and a world traveler
+url:              https://takasoft.io
 baseurl:          
 rawurl:           
 # Add this and create headline.html in _includes directory
