@@ -7,7 +7,7 @@ categories:
 
 I presented a poster about Primer Server at <a href="https://www.cur.org/conferences_and_events/student_events/ncur_2018/" target="_blank">the National Conferences on Undergraduate Research</a> at University of Central Oklahoma last week.
 
-You can see our research's abstract <a href="https://ncurdb.cur.org/ncur2018/search/Display_NCUR.aspx?id=107828" target="_blank">here</a>. I'm on <a href="https://news.engineering.iastate.edu/2018/03/30/seventeen-engineering-students-to-present-at-national-undergrad-research-conference/" target="_blank">the university news</a> as well! 
+You can see my research's abstract <a href="https://www.jsr.org/index.php/path/article/view/454" target="_blank">here</a>. I'm on <a href="https://news.engineering.iastate.edu/2018/03/30/seventeen-engineering-students-to-present-at-national-undergrad-research-conference/" target="_blank">Iowa State University news</a> as well! 
 
 Primer Server is a web application to design PCR primer with a user-friendly GUI. This is the project I am currently working on at Vollbrecht Lab, ISU. 
 
