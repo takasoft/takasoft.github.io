@@ -1,18 +1,18 @@
 # Permalinks
-permalink:        /blog/:title
+permalink: /blog/:title
 
 # Setup
-title:            TakaSoft
-tagline:          
-description:      Home page of Takao Shibamoto, a software engineer and a world traveler
-url:              https://takasoft.io
-baseurl:          
-rawurl:           
+title: TakaSoft
+tagline:
+description: Home page of Takao Shibamoto, a software engineer and a world traveler
+url: https://takasoft.io
+baseurl:
+rawurl:
 # Add this and create headline.html in _includes directory
-headline: true         
+headline: true
 # Add your google_analytics ID if you need it
-# google_analytics: 
+# google_analytics:
 
 # Pagination number
-paginate:         10
+paginate: 20
 paginate_path: "/blog/:num/"

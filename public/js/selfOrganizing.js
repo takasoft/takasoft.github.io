@@ -12,8 +12,8 @@ var isGameStarted = false;
 var game = new Phaser.Game(gameSize, gameSize+50, Phaser.AUTO, 'test-area', { preload: preload, create: create, update: update, render: render });
 
 function preload() {
-    game.load.spritesheet('startButton', window.location.origin + '/public/assets/self-organizing-simulation/startButton.png', 180, 60);
-    game.load.spritesheet('stopButton', window.location.origin + '/public/assets/self-organizing-simulation/stopButton.png', 180, 60);
+    game.load.spritesheet('startButton', window.location.origin + '/public/assets/self-organizing-simulation-startButton.png', 180, 60);
+    game.load.spritesheet('stopButton', window.location.origin + '/public/assets/self-organizing-simulation-stopButton.png', 180, 60);
 }
 
 function create() {
