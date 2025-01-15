@@ -3,7 +3,9 @@ layout: post
 title: 5 year reflection of myself as a software engineer
 ---
 
-I've been working full time as a software engineer since Feb 2020. The next month will mark my 5 year career as a software engineer. If I include pre-professional time as an undergrad research assistant in 2017-2018 and an intern in 2018-2019, I have been involved in software development for 8 years now. I want to write a little reflection on my professional career so far with some tips I have for other younger people trying to get into the tech industry.
+I've been working full time as a software engineer since Feb 2020. The next month will mark my 5 year career as a software engineer. If I include my pre-professional time as an undergrad research assistant in 2017-2018 and an intern in 2018-2019, I have been involved in software development for 8 years now. I want to write a little reflection on my professional career so far with some tips I have for other younger people trying to get into the tech industry.
+
+### Pre-Professional Era
 
 First, let me talk about my college years.
 
@@ -27,6 +29,8 @@ Intern at a different company every year. Don't stay in your comfort zone. After
 
 Another piece of advice. Take as many algorithms and data structures (DSA) courses as you can and participate in competitive programming as early as possible if your college offers it . Although a lot of people say that DSA is useless for real world jobs, that's not the case for FAANG jobs and FAANG equivalent level jobs. They expect a deep level understanding in all fields of DSA in their interview process. The internship interview that I passed has mostly asked Leetcode easy level problems with just a bit of medium level. The ICPC bar was really high, but I joined this game really late in the last year of my college, and I was mostly focused on a specific area and I didn't have a broad understanding in other fields of DSA.
 
+### Startup Era
+
 Now I'm going to talk about my professional career.
 
 After I graduated, I decided to take an opportunity at a startup in 2020 which I wanted to try out after trying both academia and a big company. I moved to Austin, Texas to commute to their office everyday but as everyone knows the pandemic hit and I ended up working 100% remotely. It was a company that started out of Shark Tank, I met a lot of unconventional people and it was really fun to ride the super growth wave during the pandemic time. Unlike big tech where most of the engineers I see are people with tech degree and tech experience, startup people are a lot more diverse.
@@ -38,6 +42,8 @@ At this company, I learned what it's like to work in a real world software devel
 Now here's my reflection. I did pretty well with getting promoted here. I got a pay raise twice during my year and a half there. I had a growth mindset. Developing testing environments was fun but I wasn't making impacts on the real customers of the business. I think that I should have gotten into the customer impacting team in the first place. Top companies really focus on what exact impacts you have made to the business. If you are mostly focused on testing environments, your impression will be pretty weak. After moving to a highly customer impacting team, the code reviews were a lot more rigorous and I learned a lot about how to write good code in Ruby. It was fun to get feedback directly from customers and stakeholders.
 
 During the pandemic, I converted my car into a camper and I traveled to a lot of places across many states by my car. The epic nature of America really blew my mind, one of the places I really loved was Glacier National Park. The deep valley of the mountains makes you feel like you are flying. I naturally headed west to see more nature and I ended up in the Seattle area, where I still stay.
+
+### Amazon Era
 
 In the middle of 2021 a lot of recruiters started reaching out to me, one of them was from Amazon. It seemed like they were doing mass hiring. For this interview preparation, I did a lot of Leetcode. I was already getting really rusty on DSA because I didn't touch any of DSA stuff after college. I struggled quite a lot. I should have kept learning DSA after college. I was really nervous in the interviews but I was able to solve most of the coding problems, and did pretty well in the behavioral one as well by focusing on the impacts I made. Salary negotiation also went well and I got an offer that was more than 50% higher than what I was making at that time. The key really was focusing on impacts and practicing DSA skills.
 
@@ -55,4 +61,6 @@ What I should have done instead was to start the promo process from Day 1. This 
 
 These kinds of things are very unclear initially. No one really tells you what to do. You have to be able to think by yourself and take action by yourself. As a software engineer, you are given a lot of freedom, but you are also expected to be an independent thinker and high impact contributor. Most engineers get to learn this over time, but it would have helped me if someone taught me these things earlier.
 
-Here's my conclusion of this reflection: The important things I discussed are focusing on your impacts, getting out of your comfort zone, and practicing DSA skills. Start as early as possible and focus on understanding what you have and what you don't have, and then start filling those gaps. 5 years is pretty long, but it also felt really short for me. I hope to keep growing as a software engineer. For people getting into this industry, learn to enjoy what you are doing. Tech has a very creative and impact based culture. Enjoy your projects and your results. Always be curious and learn new things.
+### Conclusion
+
+Here's my conclusion of this reflection: The important things I discussed are focusing on your impacts, getting out of your comfort zone, practicing DSA skills, and thinking backwards from the goal. Start as early as possible and focus on understanding what you have and what you don't have, and then start filling those gaps. 5 years is pretty long, but it also felt really short for me. I hope to keep growing as a software engineer. For people getting into this industry, learn to enjoy what you are doing. Tech has a very creative and impact based culture. Enjoy your projects and your results. Always be curious and learn new things.
