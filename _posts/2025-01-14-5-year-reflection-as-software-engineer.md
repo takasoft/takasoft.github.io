@@ -31,7 +31,7 @@ Now I'm going to talk about my professional career.
 
 After I graduated, I decided to take an opportunity at a startup in 2020 which I wanted to try out after trying both academia and a big company. I moved to Austin, Texas to commute to their office everyday but as everyone knows the pandemic hit and I ended up working 100% remotely. It was a company that started out of Shark Tank, I met a lot of unconventional people and it was really fun to ride the super growth wave during the pandemic time. Unlike big tech where most of the engineers I see are people with tech degree and tech experience, startup people are a lot more diverse.
 
-I initially focused on the development of testing automation frameworks and testing environments. The systems were several Ruby monoliths running on AWS. Ruby is losing popularity but it was the golden standard before and it is still a pretty common architecture in startup space. I wasn't doing customer impacting software development until my second year.
+I initially focused on the development of testing automation frameworks and testing environments. The systems were several Ruby monoliths running on AWS. Ruby is losing popularity but it was the golden standard before and it is still a pretty common architecture in startup space. I wasn't doing a lot of customer impacting software development until my second year.
 
 At this company, I learned what it's like to work in a real world software development team. Build pipelines, system monitors, feature flagging, load testing, code reviews, all those basic things that software engineers need to know. Through the development of testing frameworks, I got quite good inspirations for breaking software, which is also an important feature as a software engineer.
 
