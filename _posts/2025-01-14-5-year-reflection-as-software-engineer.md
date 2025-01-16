@@ -3,7 +3,7 @@ layout: post
 title: 5 year reflection of myself as a software engineer
 ---
 
-I've been working full time as a software engineer since Feb 2020. The next month will mark my 5 year career as a software engineer. I'm currently a SDE at Amazon, and I previously worked at a startup. If I include my pre-professional time during college, I have been involved in software development for 8 years now. I want to write a little reflection on my professional career so far with some tips I have for other younger people trying to get into the tech industry.
+I've been working full time as a software engineer since Feb 2020. The next month will mark my 5 year career as a software engineer. I'm currently a SDE at Amazon, and I previously worked at a startup. If I include my pre-professional time during college where I had an internship at PayPal, I have been involved in software development for 8 years now. I want to write a little reflection on my professional career so far with some tips I have for other younger people trying to get into the tech industry.
 
 ### Pre-Professional Era
 
