@@ -7,8 +7,6 @@ I've been working full time as a software engineer since Feb 2020. The next mont
 
 ### College Era
 
-First, let me talk about my college years.
-
 I started my coursework at Iowa State back in 2017. I got a couple of research assistant positions as well as teaching assistant positions throughout my college years. I worked on several projects, but the most impactful one I am proud of is [Primer Server project](https://takasoft.io/blog/ncur-primer-server) in which I developed the backend and frontend from scratch. At the end of the project, I presented the research at the National Conference on Undergraduate Research and I open-sourced the code to the public.
 
 I was lucky to get a recruiter from PayPal to reach out to me after the completion of the project. I ended up working as an intern at PayPal in Silicon Valley for 2 summers in 2018 and 2019. At PayPal, I worked in a new small software development team focused on automating firewall administration. At the time I was there, a large part of PayPal's infrastructure ran on top of virtual machines in in-house data centers. A lot of virtual machine networking was maintained manually by network security engineers. There were a lot of opportunities for improvements in the process. I worked on a web application to automate the firewall rule creation, which reduced the time required to create firewall rules from a few days to a few hours.
@@ -25,8 +23,6 @@ Make it a habit to solve DSA (data structures and algorithms) problems on Leetco
 
 ### Startup Era
 
-Now I'm going to talk about my professional career.
-
 After I graduated, I decided to take an opportunity at a startup in 2020 which I wanted to try out after trying both academia and a big company. I commuted to their office for the first few weeks, but as everyone knows, the pandemic hit and I ended up working 100% remotely for the rest of my time at this company. It was a company that sold lab testing kits, which started out of Shark Tank. I met a lot of unconventional people and it was really fun to ride the super growth wave during the pandemic time.
 
 At this company, I learned what it's like to work in a real world software development team. Build pipelines, system monitors, feature flagging, load testing, code reviews, all those basic things that software engineers need to know. Through the development of testing frameworks, I got quite good inspirations for breaking software, which is also an important feature as a software engineer.
@@ -36,8 +32,6 @@ I learned and grew quickly at this startup. I initially focused on the developme
 In the middle of 2021 a lot of recruiters started reaching out to me, one of them was from Amazon. I did a lot of Leetcode for this interview preparation. I was already getting really rusty on DSA because I didn't touch any of DSA stuff after college. I should have kept learning DSA after college. I was really nervous in the interviews but I was able to solve most of the coding problems, and did well in the behavioral one as well by focusing on the impacts I made. Salary negotiation also went well and I got an offer that was more than 50% higher than what I was making at that time. The key really was focusing on impacts and practicing DSA skills.
 
 ### Amazon Era
-
-Now, moving onto my current job at Amazon. Since it's my current job, I cannot go into too much detail, but I want to emphasize one main point. Focusing on the business impacts.
 
 Here at Amazon, I've learned quite a lot about how to build scalable data compute platforms and web applications that serve global customers. I'm in the Last Mile org, which means I get to develop solutions for Amazon's core business - last mile package deliveries. I've also learned quite a bit about how last mile operations work and how Amazon keeps raising the bar on the quality and the speed of the last mile deliveries.
 
