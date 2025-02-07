@@ -19,11 +19,11 @@ Let's say we are asked to check if two nodes u and v are within the same disjoin
 
 One way is to run BFS or DFS from u to v. This approach should be fine if we only need to check one pair. But what if we need to check a large number of pairs?
 
-Let's say there are `V` nodes and `E` edges, where `V and E = 5 * 10^6 = 1 million`. We are also given `k` number of queries, where `k = 5 * 10^6 = 1 million`. For this scale, we need a really efficient algorithm to find the connection.
+Let's say there are `V` nodes and `E` edges, where `V and E = 5 * 10^6 = 5 million`. We are also given `k` number of queries, where `k = 5 * 10^6 = 5 million`. For this scale, we need a really efficient algorithm to find the connection.
 
-Let's think about using the BFS/DFS approach again. It's trivial to come up with an algorithm which will keep track of visited nodes to efficiently traverse the entire graph. Then the algorithm can return the following mapping.
+Let's think about using the typical BFS/DFS approach again. We can come up with an algorithm which will keep track of visited nodes to efficiently traverse the entire graph. Then the algorithm can return the following mapping.
 
-Here, `parent` is any node that each of the node in the disjoint set can reach to. We can also call this the representative of the disjoint set.  
+Here, `parent` is any node that every node in the disjoint set can reach to. We can also call this the representative of the disjoint set.  
 
 ```
 node -> parent
@@ -36,9 +36,9 @@ node -> parent
 6 -> 4
 ```
 
-We can construct this mapping in `O(V)` time complexity because we will only visit each node once. We can then just check that the nodes have the same parent for each query. The time complexity will be `O(V + k)`, which is duable. 
+We can construct this mapping in `O(V)` time complexity because we will only visit each node once. We can then just check if the two nodes have the same parent for each query. The time complexity will be `O(V + k)`, which is duable. 
 
-However, a problem arrises when we want to continue to actively connect disjoint sets. Let's say we want to connect 2 and 5. The graph will look like the following.
+However, a problem arrises when we want to continue to actively connect disjoint sets. Let's say we want to connect the nodes 2 and 5. The graph will look like the following.
 
 ```
 0---1---2
@@ -59,9 +59,9 @@ node -> parent
 6 -> 0
 ```
 
-This operation can take `O(V)` because, in the worst case, we have to update almost every node. Now, if we add another requirement that a new connection gets added every time we run a query, our current approach becomes unfeasible. The time complexity will be `O(V + V * k) = O(V * k)`. Hypothetically assuming we have a computer that can handle 10^8 operations per second, and we will need `(5 * 10^6) * (5 * 10^6) / 10^8 ~= 69.4 hours` just to calculate this. 
+This operation can take `O(V)` because, in the worst case, we have to update almost every node. Now, if we add another requirement that a new connection gets added every time we run a query, our current approach becomes unfeasible. The time complexity will be `O(V + V * k) = O(V * k)`. With a rough calculation, assuming we have a computer that can handle 10^8 operations per second, then we will need `(5 * 10^6) * (5 * 10^6) / 10^8 ~= 69.4 hours` just to calculate this. 
 
-Is it possible to make it more efficient? It turns out there's an algorithm to handle this update in nearly constant time, more specifically, in `O(α(n))` time complexity, where `α(n)` is the inverse Ackermann function, which for most of the use cases, we can consider it as constant.
+Is it possible to make it more efficient? It turns out there's an algorithm to handle this graph update in nearly constant time, more specifically, in `O(α(n))` time complexity, where `α(n)` is the inverse Ackermann function, which for most of the use cases, we can consider as constant. So effectively, we can solve the problem nearly in `O(k)` time complexity.
 
 Below is the complete code for the union find algorithm. 
 
