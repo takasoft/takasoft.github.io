@@ -63,6 +63,8 @@ This operation can take `O(V)` because, in the worst case, we have to update alm
 
 Is it possible to make it more efficient? It turns out there's an algorithm to handle this graph update in nearly constant time, more specifically, in `O(α(n))` time complexity, where `α(n)` is the inverse Ackermann function, which for most of the use cases, we can consider as constant. So effectively, we can solve the problem nearly in `O(k)` time complexity.
 
+Union Find is also useful when we are only given a list of edges in the problem. To run DFS or BFS, you first need to construct an adjacency list or adjacency matrix. There's no need for that if you use union find directly because the union function takes an edge as an argument. 
+
 Below is the complete code for the union find algorithm. 
 
 ```python3
