@@ -96,7 +96,7 @@ There are two main parts in this algorithm. One is union by rank and another is 
 
 #### Union by Rank
 
-Let's use the following example.
+Let's use the following example. parent of the first set is 0 and the parent of the second set is 3 in this example. 
 
 ```
 0
@@ -114,21 +114,19 @@ Let's think of the scenario we don't consider rank.
 
 `parent` stores a tree structure where the edges point the reverse direction and the root is the representative of the disjoint set. When the union operation results in connecting two disjoint sets, we can end up in the situation one side contains a lot more nodes than the other. 
 
-In the worse case scenario, the parent tree can look like the following after union(2, 3). The find operation will be slow, and it will have `O(n)` time complexity.
+In the worse case scenario, the parent tree can look like the following after union(2, 3) since we don't check the rank. The find operation will be slow, and it will have `O(n)` time complexity in the worst case.
 
 ```
-0
+  3
+ / \
+0   4
  \
   1
    \
     2
-     \
-      3
-       \
-        4
 ```
 
-Now let's introduce the concept of rank. Rank loosely captures the height of the tree. When connecting one tree to the other, we will make sure that we connect the shorter tree to the parent. This ensures we have a lower height tree like the following. 
+Now let's introduce the concept of rank. A rank loosely captures the height of the tree. When connecting one tree to the other, we will make sure that we connect the shorter tree to the parent. This ensures we have a lower height tree like the following. 
 
 ```
   0
