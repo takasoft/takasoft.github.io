@@ -3,8 +3,6 @@ layout: post
 title: Why union find is such a cool algorithm
 ---
 
-Note: This post is still work in progress
-
 One of my favorite algorithms in graph theory is Union Find. It is a beautiful algorithm to group disjoint sets. A disjoint set is a set of nodes in an undirected graph that contains itself, and is not connected to other sets.
 
 Suppose we have the following graph. Disjoint sets are `{0, 1, 2, 3}` and `{4, 5}`. As you can see, they are disconnected from each other.
@@ -65,6 +63,8 @@ Is it possible to make it more efficient? It turns out there's an algorithm to h
 
 Union Find is also useful when we are only given a list of edges in the problem. To run DFS or BFS, you first need to construct an adjacency list or adjacency matrix. There's no need for that if you use union find directly because the union function takes an edge as an argument. 
 
+#### Code
+
 Below is the complete code for the union find algorithm. 
 
 ```python3
@@ -91,3 +91,64 @@ class UnionFind:
             self.parent[v] = u
             self.rank[u] += self.rank[v]
 ```
+
+There are two main parts in this algorithm. One is union by rank and another is path compression.
+
+#### Union by Rank
+
+Let's think of the scenario we don't consider rank.
+
+`parent` stores a tree structure where the edges point the reverse direction and the root is the representative of the disjoint set. When the union operation results in connecting two disjoint sets, we can end up in the situation one side contains a lot more nodes than the other. 
+
+In the worse case scenario, the parent tree can look like the following. The find operation will be slow, and it will have `O(n)` time complexity.
+
+```
+0
+ \
+  1
+   
+    2
+     \
+      3
+       \
+        4
+```
+
+Without union by rank
+
+```
+0
+ \
+  1
+   \
+    2
+     \
+      3
+       \
+        4
+```
+
+Now let's introduce the concept of rank. Rank loosely captures the height of the tree. When connecting one tree to the other, we will make sure that we connect the shorter tree to the parent. This ensures we have a lower height tree like the following. 
+
+```
+  0
+ / \
+2   1
+\ 
+ 3
+  \
+   4
+```
+
+#### Path Compression
+
+Path compression is implemented in the find function. Instead of simply returning `parent[u]`, we run a little recursive function to point all children nodes to the parent.
+
+With path compression the earlier result will change to the following.
+
+```
+  0
+ / \ \ \
+2   1 3 4
+```
+
