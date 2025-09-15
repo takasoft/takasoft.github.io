@@ -96,25 +96,25 @@ There are two main parts in this algorithm. One is union by rank and another is 
 
 #### Union by Rank
 
-Let's think of the scenario we don't consider rank.
-
-`parent` stores a tree structure where the edges point the reverse direction and the root is the representative of the disjoint set. When the union operation results in connecting two disjoint sets, we can end up in the situation one side contains a lot more nodes than the other. 
-
-In the worse case scenario, the parent tree can look like the following. The find operation will be slow, and it will have `O(n)` time complexity.
+Let's use the following example.
 
 ```
 0
  \
   1
-   
+   \
     2
-     \
+     
       3
        \
         4
 ```
 
-Without union by rank
+Let's think of the scenario we don't consider rank.
+
+`parent` stores a tree structure where the edges point the reverse direction and the root is the representative of the disjoint set. When the union operation results in connecting two disjoint sets, we can end up in the situation one side contains a lot more nodes than the other. 
+
+In the worse case scenario, the parent tree can look like the following after union(2, 3). The find operation will be slow, and it will have `O(n)` time complexity.
 
 ```
 0
@@ -133,22 +133,20 @@ Now let's introduce the concept of rank. Rank loosely captures the height of the
 ```
   0
  / \
-2   1
-\ 
- 3
-  \
-   4
+3   1
+ \   \
+  4   2
 ```
 
 #### Path Compression
 
 Path compression is implemented in the find function. Instead of simply returning `parent[u]`, we run a little recursive function to point all children nodes to the parent.
 
-With path compression the earlier result will change to the following.
+With path compression the earlier result will change to the following. Now we have a tree of height just 2.
 
 ```
   0
  / \ \ \
-2   1 3 4
+3   1 4 2
 ```
 
