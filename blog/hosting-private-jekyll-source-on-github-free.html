@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="How to Host a Private Jekyll Source on GitHub Pages Without Paying for Pro">
+  <meta property="og:description" content="GitHub Pages on the Free plan only builds from public repos. To keep your source private, GitHub charges $4/month for Pro. Here’s how to get the same result for $0 by splitting source and built out...">
+  <meta property="og:url" content="https://takasoft.io/blog/hosting-private-jekyll-source-on-github-free">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="How to Host a Private Jekyll Source on GitHub Pages Without Paying for Pro">
+  <meta name="twitter:description" content="GitHub Pages on the Free plan only builds from public repos. To keep your source private, GitHub charges $4/month for Pro. Here’s how to get the same result for $0 by splitting source and built out...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      How to Host a Private Jekyll Source on GitHub Pages Without Paying for Pro - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">How to Host a Private Jekyll Source on GitHub Pages Without Paying for Pro</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-05-11T00:00:00+00:00">
+          2026-05-11
+        </time>
+      </span>
+    </span>
+    <p>GitHub Pages on the Free plan only builds from public repos. To keep your source private, GitHub charges $4/month for Pro. Here’s how to get the same result for $0 by splitting source and built output into two repos.</p>
+
+<h3 id="why-pages-and-private-repos-dont-get-along-on-free">Why Pages and private repos don’t get along on Free</h3>
+
+<p>GitHub Pages on a free personal account only builds from public repositories. The “Pages from private repos” feature is gated behind GitHub Pro ($4/month). $48 a year is a fine price for the convenience, but I was curious whether there was a cleaner workaround that didn’t need it.</p>
+
+<p>The trick is that Pages doesn’t care where your source code lives — it only cares about what’s in the repo it’s serving from. So if you build the site somewhere else and only push the <em>built output</em> to a public repo, the source can stay private.</p>
+
+<h3 id="the-two-repo-split">The two-repo split</h3>
+
+<p>Here’s the setup I ended up with:</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    A["takasoft/takasoft.io-private-source&lt;br/&gt;&lt;b&gt;(PRIVATE)&lt;/b&gt;&lt;br/&gt;Jekyll source"]
+    B["takasoft/takasoft.github.io&lt;br/&gt;&lt;b&gt;(PUBLIC)&lt;/b&gt;&lt;br/&gt;built _site/&lt;br/&gt;single orphan commit"]
+    C(["GitHub Pages&lt;br/&gt;serves at&lt;br/&gt;takasoft.io"])
+    A -- "GitHub Action:&lt;br/&gt;force-push orphan commit" --&gt; B
+    B --&gt; C
+</code></pre>
+
+<p>A GitHub Action in the private source repo runs <code class="language-plaintext highlighter-rouge">jekyll build</code>, then force-pushes a single orphan commit of the built <code class="language-plaintext highlighter-rouge">_site/</code> directory to the <code class="language-plaintext highlighter-rouge">gh-pages</code> branch of the public output repo. Pages picks up the change and serves it at takasoft.io as usual.</p>
+
+<p>Three things make this work cleanly:</p>
+
+<ol>
+  <li><strong><code class="language-plaintext highlighter-rouge">force_orphan: true</code></strong> — every deploy is a single rootless commit. No history accumulates on the public side. Anyone browsing the public repo only ever sees the most recent build.</li>
+  <li><strong>Cross-repo PAT</strong> — the workflow needs a fine-grained personal access token scoped <em>only</em> to the output repo with <code class="language-plaintext highlighter-rouge">Contents: read and write</code>. Stored as a secret in the source repo.</li>
+  <li><strong>CNAME handled by the action</strong> — <code class="language-plaintext highlighter-rouge">peaceiris/actions-gh-pages</code> writes the CNAME file to the published branch directly, so I don’t need to commit it to source.</li>
+</ol>
+
+<h3 id="the-workflow">The workflow</h3>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">name</span><span class="pi">:</span> <span class="s">Build and deploy to Pages</span>
+
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">master</span><span class="pi">]</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>
+
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">build-deploy</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v4</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">ruby/setup-ruby@v1</span>
+        <span class="na">with</span><span class="pi">:</span>
+          <span class="na">ruby-version</span><span class="pi">:</span> <span class="s1">'</span><span class="s">3.3'</span>
+          <span class="na">bundler-cache</span><span class="pi">:</span> <span class="kc">true</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec jekyll build --safe</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">peaceiris/actions-gh-pages@v4</span>
+        <span class="na">with</span><span class="pi">:</span>
+          <span class="na">personal_token</span><span class="pi">:</span> <span class="s">$</span>
+          <span class="na">external_repository</span><span class="pi">:</span> <span class="s">takasoft/takasoft.github.io</span>
+          <span class="na">publish_branch</span><span class="pi">:</span> <span class="s">gh-pages</span>
+          <span class="na">publish_dir</span><span class="pi">:</span> <span class="s">./_site</span>
+          <span class="na">force_orphan</span><span class="pi">:</span> <span class="kc">true</span>
+          <span class="na">cname</span><span class="pi">:</span> <span class="s">takasoft.io</span>
+</code></pre></div></div>
+
+<p>That’s the entire deploy pipeline. About 25 lines of YAML.</p>
+
+<h3 id="migrating-without-downtime">Migrating without downtime</h3>
+
+<p>If you’re doing this migration on an existing blog that’s already serving from <code class="language-plaintext highlighter-rouge">master / (root)</code>, you want to avoid any window where takasoft.io is broken. The trick is to add the new infrastructure first and only remove the old after the new path is confirmed working. Until the final step, the public repo’s <code class="language-plaintext highlighter-rouge">master</code> branch still has your original source and Pages still serves from it — so flipping back is a one-click rollback.</p>
+
+<ol>
+  <li>
+    <p><strong>Create the new private source repo and push your code there.</strong> Nothing changes on the public side. The live site keeps serving from <code class="language-plaintext highlighter-rouge">master</code> as before.</p>
+  </li>
+  <li>
+    <p><strong>Create a fine-grained PAT and store it as a secret on the private repo.</strong> Scope it to <em>only</em> the public output repo with <code class="language-plaintext highlighter-rouge">Contents: Read and write</code>. Add it as a repository secret named <code class="language-plaintext highlighter-rouge">PAGES_DEPLOY_TOKEN</code>. A fine-grained PAT (as opposed to a classic one) limits the blast radius if the secret ever leaks.</p>
+  </li>
+  <li>
+    <p><strong>Add the workflow and run it once.</strong> The first deploy creates a new <code class="language-plaintext highlighter-rouge">gh-pages</code> branch on the public repo with your built site. The public repo’s <code class="language-plaintext highlighter-rouge">master</code> is untouched; the live site still serves the old build. This gives you a chance to inspect the contents of <code class="language-plaintext highlighter-rouge">gh-pages</code> before exposing it to visitors.</p>
+  </li>
+  <li>
+    <p><strong>Flip Pages to deploy from <code class="language-plaintext highlighter-rouge">gh-pages</code>.</strong> In Settings → Pages on the public repo, switch the source from <code class="language-plaintext highlighter-rouge">master / (root)</code> to <code class="language-plaintext highlighter-rouge">gh-pages / (root)</code>. Then trigger a manual rebuild — Pages doesn’t auto-rebuild on a source-branch change:</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gh api <span class="nt">-X</span> POST repos/&lt;owner&gt;/&lt;repo&gt;/pages/builds
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>Verify.</strong> <code class="language-plaintext highlighter-rouge">curl -sI https://yoursite.com</code> should return 200 with a fresh <code class="language-plaintext highlighter-rouge">Last-Modified</code> header. Spot-check a known post URL and an asset under <code class="language-plaintext highlighter-rouge">/public/</code>. If anything looks wrong, flip Pages source back to <code class="language-plaintext highlighter-rouge">master / (root)</code> — instant rollback to the pre-migration state.</p>
+  </li>
+  <li>
+    <p><strong>Only now, delete the public repo’s <code class="language-plaintext highlighter-rouge">master</code>.</strong> This is the destructive step that makes old source commits unreachable. The default branch must move first (GitHub refuses to delete the current default):</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gh api <span class="nt">-X</span> PATCH repos/&lt;owner&gt;/&lt;repo&gt; <span class="nt">-f</span> <span class="nv">default_branch</span><span class="o">=</span>gh-pages
+gh api <span class="nt">-X</span> DELETE repos/&lt;owner&gt;/&lt;repo&gt;/git/refs/heads/master
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<p>Until step 6, everything is reversible. After step 6, the old source history becomes unreachable on github.com — though as noted below, “unreachable” isn’t quite the same as “gone”.</p>
+
+<h3 id="gotchas-i-hit">Gotchas I hit</h3>
+
+<p>A couple of things bit me along the way that I want to remember.</p>
+
+<p><strong>Jekyll’s <code class="language-plaintext highlighter-rouge">exclude:</code> replaces the defaults — it doesn’t extend them.</strong></p>
+
+<p>I added a few entries to <code class="language-plaintext highlighter-rouge">exclude:</code> in <code class="language-plaintext highlighter-rouge">_config.yml</code> to keep some files out of the build:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">exclude</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">README.md</span>
+  <span class="pi">-</span> <span class="s">.ruby-version</span>
+  <span class="pi">-</span> <span class="s">.github</span>
+</code></pre></div></div>
+
+<p>The build immediately broke with:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Invalid date '&lt;%= Time.now.strftime(...) %&gt;': Document
+'vendor/bundle/ruby/3.3.0/gems/jekyll-3.10.0/lib/site_template/_posts/...'
+does not have a valid date in the YAML front matter.
+</code></pre></div></div>
+
+<p>Jekyll was trying to render its own gem-internal template files as blog posts. It turns out that when you set <code class="language-plaintext highlighter-rouge">exclude:</code> yourself, you wipe out Jekyll’s built-in default exclusion of <code class="language-plaintext highlighter-rouge">vendor/bundle/</code>, <code class="language-plaintext highlighter-rouge">node_modules/</code>, <code class="language-plaintext highlighter-rouge">Gemfile.lock</code>, etc. — and <code class="language-plaintext highlighter-rouge">bundler-cache: true</code> puts gems in <code class="language-plaintext highlighter-rouge">vendor/bundle/</code> inside the workspace, where Jekyll then sees them.</p>
+
+<p>Fix: re-include the defaults manually. Annoying but easy once you know.</p>
+
+<p><strong>Pages doesn’t auto-rebuild when you change the source branch.</strong></p>
+
+<p>After flipping Pages settings from <code class="language-plaintext highlighter-rouge">master / (root)</code> to <code class="language-plaintext highlighter-rouge">gh-pages / (root)</code>, I expected the site to rebuild immediately against the new branch. It didn’t — <code class="language-plaintext highlighter-rouge">Last-Modified</code> headers kept showing the old build’s timestamp. The fix is to trigger a build manually:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gh api <span class="nt">-X</span> POST repos/&lt;owner&gt;/&lt;repo&gt;/pages/builds
+</code></pre></div></div>
+
+<p>After that, future pushes get picked up automatically; Pages just doesn’t react to the source-branch setting change on its own.</p>
+
+<h3 id="what-this-hides-and-what-it-doesnt">What this hides and what it doesn’t</h3>
+
+<p>Hidden:</p>
+<ul>
+  <li>The git history of the source. Anyone visiting <code class="language-plaintext highlighter-rouge">github.com/takasoft/takasoft.io-private-source</code> gets a 404.</li>
+  <li>The Jekyll source files (<code class="language-plaintext highlighter-rouge">_layouts/</code>, <code class="language-plaintext highlighter-rouge">_includes/</code>, <code class="language-plaintext highlighter-rouge">_config.yml</code>, etc.). The public repo only has built HTML.</li>
+  <li>New commit SHAs on the public side, since the orphan force-push makes every previous commit unreachable.</li>
+</ul>
+
+<p>Not hidden:</p>
+<ul>
+  <li>The site content itself — by definition it’s published.</li>
+  <li>Old commits from <em>before</em> the migration. They become unreachable, but GitHub doesn’t garbage-collect them immediately — direct-SHA URLs may still resolve for weeks. Forks (if any exist) keep them forever.</li>
+</ul>
+
+<p>For a personal blog this trade-off is fine. The 8 years of commit messages I cared about hiding are now functionally unreachable for anyone who doesn’t already have an old SHA bookmarked.</p>
+
+<h3 id="was-it-worth-it">Was it worth it</h3>
+
+<p>Sort of. The single-repo setup you get with GitHub Pro would have saved me maybe an hour of fiddling, plus a yearly calendar reminder to rotate the PAT. But the two-repo split is essentially fire-and-forget once it’s set up, and there’s something satisfying about getting the same outcome for free on a platform that wants to charge for it.</p>
+
+<p>If you try this route, the only recurring task is rotating the deploy PAT yearly. GitHub emails you when it’s about to expire, so it’s hard to forget.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/replacing-manual-pipelines-with-workers">From manual script to production pipeline</a>
+            <small>2026-04-20</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/imagej-pollen">Pollen molecule filtering ImageJ plugin</a>
+            <small>2017-09-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/tspm">Tissue Sample Plate Mapper</a>
+            <small>2017-08-16</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/Arabic-Number-to-Japanese-Chinese-Number-Converter">Arabic Number to Japanese/Chinese Number Converter</a>
+            <small>2017-02-05</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="From manual script to production pipeline">
+  <meta property="og:description" content="A pattern I have seen in nearly every company I have worked at, regardless of size or sophistication: somewhere in the engineering org, there is a critical data pipeline that is “automated” only in...">
+  <meta property="og:url" content="https://takasoft.io/blog/replacing-manual-pipelines-with-workers">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="From manual script to production pipeline">
+  <meta name="twitter:description" content="A pattern I have seen in nearly every company I have worked at, regardless of size or sophistication: somewhere in the engineering org, there is a critical data pipeline that is “automated” only in...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      From manual script to production pipeline - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">From manual script to production pipeline</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-04-20T00:00:00+00:00">
+          2026-04-20
+        </time>
+      </span>
+    </span>
+    <p>A pattern I have seen in nearly every company I have worked at, regardless of size or sophistication: somewhere in the engineering org, there is a critical data pipeline that is “automated” only in the loosest sense. An engineer runs a script. The script does some things. Sometimes it works. Sometimes it produces malformed output and somebody has to spend two hours figuring out what went wrong, manually cleaning up, and re-running.</p>
+
+<p>These pipelines are not automated. They are manually-operated, with code as the implementation detail. And they are everywhere — in startups, in scale-ups, even at FAANG companies. They tend to accumulate in places that the company does not yet consider “real” infrastructure: insurance data ingestion, partner onboarding, billing reconciliation, internal reporting feeds.</p>
+
+<p>The interesting engineering question is not “should we automate this” — usually the answer is yes, eventually. The harder questions are: when does the cost of leaving it manual exceed the cost of automating? And when you do automate, what does the right replacement architecture look like?</p>
+
+<p>I rebuilt one of these pipelines at a health-tech startup during the COVID-19 pandemic, going from manually-executed scripts to a worker-based automated system. Throughput went up 8x and engineering toil dropped to near zero. Here is what I learned about when to make this kind of investment and how to do it well.</p>
+
+<h3 id="signs-your-manual-pipeline-has-hit-its-expiration-date">Signs your manual pipeline has hit its expiration date</h3>
+
+<p>A manually-operated pipeline is fine when:</p>
+
+<ul>
+  <li>It runs rarely (once a week or less)</li>
+  <li>The data volume is small enough to validate by eye</li>
+  <li>Failures are rare and recoverable in minutes</li>
+  <li>The engineering cost to automate exceeds the cumulative manual operating cost</li>
+</ul>
+
+<p>It needs to be replaced when:</p>
+
+<ol>
+  <li><strong>The pipeline is on the critical path for the business.</strong> If failures or delays here cause customer-facing problems, manual operation is incompatible with reliability.</li>
+  <li><strong>The frequency has gone up by 5–10x without anyone noticing.</strong> A pipeline that ran weekly two years ago and now runs daily was never re-evaluated.</li>
+  <li><strong>The “fix” workflow is consuming significant engineering hours.</strong> If even one engineer spends a day a week recovering from pipeline failures, that is 50+ engineering days a year of pure overhead.</li>
+  <li><strong>The error mode is silent.</strong> If the pipeline can produce wrong output without anyone knowing, that is the worst combination — the manual operator’s eye is the only quality gate, and the operator is busy.</li>
+  <li><strong>The team is growing and the institutional knowledge is concentrated in one person.</strong> When the only engineer who knows how to run the script goes on vacation, you find out very fast how critical the pipeline was.</li>
+</ol>
+
+<p>In the case I rebuilt, all five of these were true at once. The original system was a Ruby script that processed insurance member data files dropped from carriers. Engineers ran it on demand. It frequently produced malformed records that had to be manually cleaned up. As the company scaled toward 350,000+ test kits per month, the pipeline went from “OK” to “active liability” within a few months.</p>
+
+<h3 id="when-not-to-do-this">When NOT to do this</h3>
+
+<p>I have also seen this kind of rewrite go badly. Common failure modes:</p>
+
+<ul>
+  <li><strong>The team rewrites the pipeline before anyone agrees on the requirements.</strong> You end up with a beautiful new system that automates the wrong thing.</li>
+  <li><strong>The team chooses an over-engineered architecture for a small problem.</strong> A 100-record-per-day pipeline does not need Kafka. A simple cron + script with proper logging is fine.</li>
+  <li><strong>The team replaces the manual pipeline but does not change the upstream contracts.</strong> The new system is now silently producing the same garbage outputs the manual one did, just at higher throughput.</li>
+</ul>
+
+<p>The point of automation is to reduce engineering toil and increase reliability. If the rewrite does not do those things, it does not matter how clean the architecture diagram is.</p>
+
+<h3 id="what-good-automation-actually-looks-like">What “good” automation actually looks like</h3>
+
+<p>The naive automation move — wrap the script in a cron job — is usually a mistake. It takes the worst aspects of manual operation (no observability, no error handling, no parallelism) and removes the one good aspect (a human in the loop catching obvious failures).</p>
+
+<p>A worker-based architecture is generally a better target. Concretely, the shape it converges on looks like this:</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    SRC[("Source")] --&gt; ING["Ingest&lt;br/&gt;+ validate"]
+    ING --&gt;|"valid"| Q["Work queue&lt;br/&gt;(durable)"]
+    ING --&gt;|"invalid"| DLQ[("Quarantine /&lt;br/&gt;dead-letter")]
+    Q --&gt; W["Workers&lt;br/&gt;(idempotent, retried)"]
+    W --&gt; ST[("State + output&lt;br/&gt;store")]
+    W -.failures.-&gt; DLQ
+    W --&gt; OBS["Observability&lt;br/&gt;(metrics, logs, audit)"]
+</code></pre>
+
+<p>Everything in the checklist further down is just making each box in that diagram trustworthy.</p>
+
+<p>This architecture has several properties that the wrapped-cron version does not:</p>
+
+<ul>
+  <li><strong>Horizontal scaling.</strong> Run more workers, process more data. No pipeline rewrite needed.</li>
+  <li><strong>Graceful degradation.</strong> If one record is malformed, that record alone fails. Everything else continues.</li>
+  <li><strong>Self-healing on transient failures.</strong> A worker that crashes mid-task does not lose work; the queue redrives the item.</li>
+  <li><strong>Visible health.</strong> When the queue is backing up, you see it. When malformed data is coming in, you see it.</li>
+  <li><strong>No engineer in the loop on the happy path.</strong> Engineers only get involved when something genuinely needs human judgment.</li>
+</ul>
+
+<p>If all you needed was the decision of whether and when, you can stop here. The rest of this post is the detailed version: the specific properties that turn that diagram into something you can leave running unattended. Think of it less as a tutorial and more as a list of questions to ask about any pipeline you would be paged for at 2am.</p>
+
+<h3 id="1-durable-job-state">1. Durable job state</h3>
+
+<p>A script holds its state in memory and in the engineer’s head: which files it has processed, where it stopped, what it was about to do next. The moment the process dies, all of that is gone, and recovery means an engineer reconstructing it by hand.</p>
+
+<p>A pipeline keeps that state somewhere durable: a queue, a database table, a job ledger. “We have processed records 1 through 4,000; 4,001 onward are still pending” should survive a crash, a deploy, and a restart. The test is simple: if you kill the process right now, can it pick up exactly where it left off without a human deciding where that was? If the answer lives only in someone’s memory, you have a script.</p>
+
+<h3 id="2-idempotency">2. Idempotency</h3>
+
+<p>Idempotency means processing the same item twice produces the same result as processing it once. This sounds like a nicety. It is actually the property that makes every other reliability mechanism safe, because retries, redrives, and reruns all reprocess things that may have partially succeeded.</p>
+
+<p>In practice this means: deduplicate on a stable key, make writes upserts rather than blind inserts, and design so that “did this already happen?” is a question the system can answer. Without idempotency, a retry after a partial failure double-counts, double-charges, or double-sends. With it, “just run it again” becomes a safe operation instead of a gamble, which is the difference between a pipeline you can operate and one you have to babysit.</p>
+
+<h3 id="3-retries-with-backoff-and-a-limit">3. Retries with backoff, and a limit</h3>
+
+<p>Transient failures are not the exception in distributed systems, they are the weather. A provider times out, a database has a brief blip, a network hiccups. A script treats the first transient failure as fatal. A pipeline expects them and retries.</p>
+
+<p>The details matter. Retry with exponential backoff so you do not hammer a struggling dependency into the ground. Add jitter so a thousand workers do not all retry in lockstep and create a thundering herd. And crucially, cap the retries: an item that has failed ten times is not transient, it is broken, and it needs to stop retrying and go somewhere a human will see it. Which brings us to the next item.</p>
+
+<h3 id="4-a-quarantine-path-not-a-halt">4. A quarantine path, not a halt</h3>
+
+<p>This is the single biggest behavioral difference between a script and a pipeline. When a script hits a bad record, the whole run stops. One malformed row out of fifty thousand, and nothing gets processed until someone intervenes.</p>
+
+<p>A pipeline isolates the failure. The bad item goes to a quarantine area, often called a dead-letter queue, with enough context to debug it later, and every other item keeps flowing. The blast radius of one bad record is one record. This is what lets the pipeline maintain throughput while still surfacing problems, rather than forcing a choice between “stop everything” and “silently skip.” You get neither halt nor silent loss: you get a visible pile of failures you can triage on your own schedule.</p>
+
+<h3 id="5-validation-at-the-boundary">5. Validation at the boundary</h3>
+
+<p>Every upstream you depend on has its own private definition of “valid input,” and real data is worse than you expect: missing fields, extra fields, wrong types, and the dangerous category, values that are technically well-formed but semantically nonsense (a delivery timestamp from 1970, a negative weight, a country code that does not exist).</p>
+
+<p>Validate at ingestion, before the data is deep inside your processing logic. Type and schema checks are the easy half. The hard, valuable half is semantic validation: range checks, referential checks, sanity checks that encode what the data is actually supposed to mean. Data caught at the boundary is a quarantined item with a clear reason. The same data caught three stages later is a corrupted output and a confusing bug. This is the practical face of “garbage in, garbage out,” and it is cheaper to enforce at the door than to chase downstream.</p>
+
+<h3 id="6-an-audit-trail">6. An audit trail</h3>
+
+<p>When someone asks “why does this record look wrong?” three weeks later, you need to be able to answer it. That means the pipeline records what it did: which input produced which output, when it ran, what version of the code and config processed it, and what decisions it made along the way.</p>
+
+<p>This is not the same as logging. Logs are for debugging the system; an audit trail is for explaining a specific result after the fact. In regulated or financial contexts it is mandatory, but it earns its keep everywhere, because the question “what happened to this particular item?” is one you will be asked constantly, and “let me read the code and guess” is not an answer you want to give.</p>
+
+<h3 id="7-observability-you-can-act-on">7. Observability you can act on</h3>
+
+<p>A script’s health is “the engineer who ran it is still watching the terminal.” A pipeline runs unattended, so it has to expose its own health: queue depth, processing rate, error rate, end-to-end latency, and the size of the quarantine pile. These are the vital signs, and they need to be on a dashboard the on-call engineer actually looks at.</p>
+
+<p>The bar is not “we have logs.” The bar is: when the pipeline is backing up or quietly dropping things, does a signal reach a human before a customer does? If queue depth quietly climbing for six hours produces no alert, the pipeline is automated but not observable, and the first you will hear of it is the downstream complaint. I wrote more about why this telemetry is itself a hard data problem in <a href="/blog/network-telemetry-is-a-big-data-problem">a separate post on network telemetry</a>; the same discipline applies to any pipeline watching itself.</p>
+
+<h3 id="8-safe-reruns">8. Safe reruns</h3>
+
+<p>Things go wrong, and when they do you will need to reprocess: a day’s worth of data, a single failed batch, everything since Tuesday. A pipeline makes this a routine, parameterized operation (“reprocess this window”), not a heroic one-off where an engineer hand-edits the script and prays.</p>
+
+<p>Safe reruns are where items 1 through 6 pay off together. Durable state tells you what to reprocess. Idempotency makes reprocessing non-destructive. The quarantine path gives you a clean set of failures to retry. The audit trail lets you confirm the rerun did what you expected. If reruns are scary, it is usually a sign one of those foundations is missing, and the fear is the signal telling you where.</p>
+
+<h3 id="9-the-database-is-part-of-the-pipeline">9. The database is part of the pipeline</h3>
+
+<p>A point that is easy to miss: a pipeline that was written at single-engineer speed often has a database that is also at single-engineer speed. The moment you parallelize the work across many workers, those queries get hit far harder, and the bottleneck just moves from the script to the database.</p>
+
+<p>So pipeline design includes data-access design: the right indexes for the queries the workers actually run, denormalizing the few hot paths that need it, caching reads that do not change, and being honest about which queries will run a million times a day. Otherwise the shiny new worker pool simply queues up behind a slow query, and you have moved the problem without solving it.</p>
+
+<h3 id="the-architecture-is-not-the-hard-part">The architecture is not the hard part</h3>
+
+<p>Here is the dirty secret of this kind of work: the architecture diagram is the easy part. The hard parts are:</p>
+
+<p><strong>1. Migrating without dropping data.</strong> You cannot just “switch over.” You need a period of running both systems in parallel, comparing outputs, validating that the new pipeline produces the same results as the old (modulo the bugs you are fixing). This usually takes longer than building the new pipeline itself.</p>
+
+<p><strong>2. Designing schema validation that catches real bad data.</strong> Every upstream provider you depend on has its own definition of “valid input.” Real data has missing fields, extra fields, fields with wrong types, fields with values that are technically valid but semantically nonsense. Schema validation needs to catch the semantically-nonsense category, which is much harder than catching type mismatches.</p>
+
+<p><strong>3. Retrofitting database performance.</strong> A pipeline that was running at single-engineer speed often has database queries that are also at single-engineer speed. When you parallelize the pipeline, those queries hit the database harder. You usually need to add indexes, denormalize a few tables, and cache hot reads. In the case I worked on, applying targeted indexing strategies to the underlying database improved filtering query performance by 40x — separately from the pipeline rewrite. Without that, the worker pool would have just shifted the bottleneck downstream.</p>
+
+<p><strong>4. Data quality work that exposes existing bugs.</strong> The first time the new system runs, you will find data quality issues that were silently being papered over by the manual operator. This is good — those bugs were always there — but it means your “switch over” timeline includes fixing problems that have nothing to do with the pipeline rewrite itself.</p>
+
+<p><strong>5. Operational handoff.</strong> The on-call engineer needs to know how to debug the new system. The runbook needs to exist. The dashboards need to be intuitive. None of this is glamorous, all of it is required for the system to actually run unattended.</p>
+
+<p>But the checklist is what you are migrating <em>toward</em>, and it is worth being explicit about it, because every item is a place where a pipeline silently degrades back into a script when no one is watching. Retries get removed during an incident and never restored. Validation gets loosened to push a deadline. The dashboard breaks and nobody notices because nothing is on fire yet.</p>
+
+<p>A production pipeline is not a thing you build once. It is a set of properties you keep choosing to maintain, and the checklist is how you keep the score. The same instinct shows up in the open-source pipeline tooling I work on around <a href="https://github.com/takasoft/floe">Floe</a>: the interesting problems are almost never the transformation logic, they are durability, idempotency, and safe reprocessing, the unglamorous properties that decide whether the thing can be trusted to run without you.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a>
+            <small>2026-06-12</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/rag-in-production-is-mostly-retrieval">RAG in production is mostly retrieval, not generation</a>
+            <small>2026-05-25</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

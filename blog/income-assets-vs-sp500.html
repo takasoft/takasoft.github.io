@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Yield is not return: income-producing assets vs. the S&P 500">
+  <meta property="og:description" content="There is a kind of investment that feels better than it is: the kind that pays you. A dividend lands in your account, a tenant wires rent, a bond coupon shows up like clockwork. It feels like the a...">
+  <meta property="og:url" content="https://takasoft.io/blog/income-assets-vs-sp500">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Yield is not return: income-producing assets vs. the S&P 500">
+  <meta name="twitter:description" content="There is a kind of investment that feels better than it is: the kind that pays you. A dividend lands in your account, a tenant wires rent, a bond coupon shows up like clockwork. It feels like the a...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Yield is not return: income-producing assets vs. the S&P 500 - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+  <!-- KaTeX CSS for math rendered at build time by kramdown's katex engine.
+       Auto-detected: the page's rendered HTML (page.content) is already
+       built when this include runs, so we just check whether kramdown
+       emitted any KaTeX markup and pull in the CSS only when it did.
+       WOFF2 fonts download on-demand only when math glyphs are painted. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <style>
+    /* Long display equations would otherwise overflow the layout on narrow
+       viewports (mobile) and push the whole page wider. Constrain to the
+       container and allow horizontal scroll within the equation itself. */
+    .katex-display {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.25em 0;
+    }
+  </style>
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Yield is not return: income-producing assets vs. the S&P 500</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-07-09T00:00:00+00:00">
+          2026-07-09
+        </time>
+      </span>
+    </span>
+    <p>There is a kind of investment that feels better than it is: the kind that pays you. A dividend lands in your account, a tenant wires rent, a bond coupon shows up like clockwork. It feels like the asset is <em>working for you</em> in a way a rising index number never quite does. That feeling is mostly an illusion, and an expensive one.</p>
+
+<p><strong>In this post:</strong> <a href="#the-one-idea-that-dissolves-most-of-the-argument">The one idea</a> · <a href="#the-contenders-at-a-glance">The contenders</a> · <a href="#dividend-stock-etfs">Dividend ETFs</a> · <a href="#covered-call-income-etfs">Covered-call funds</a> · <a href="#reits">REITs</a> · <a href="#rental-property">Rental property</a> · <a href="#bonds-and-cash">Bonds and cash</a> · <a href="#further-out-on-the-yield-curve">Further out</a> · <a href="#what-the-gap-actually-looks-like">The gap</a> · <a href="#so-when-does-an-income-asset-actually-make-sense">When income assets make sense</a> · <a href="#the-one-liner">The one-liner</a></p>
+
+<p>Two earlier posts set the baseline: <a href="/blog/why-should-we-invest-our-money">why we invest at all</a> and <a href="/blog/my-investing-strategy">my actual strategy</a>. Both land on the same anchor: a broad S&amp;P 500 index fund, held for decades with dividends reinvested, has returned about <strong>10% nominal</strong> and <strong>~7% real</strong> over a century. That’s the yardstick. This post measures the two income assets people ask me about most, dividend ETFs and rental property, against it.</p>
+
+<p>The scoreboard is <strong>total return, after tax and after effort</strong>, not yield. Once held to that standard, most income assets stop looking like a smarter version of the index and start looking like the same return relocated into a smaller, less flexible, more heavily taxed stream. The few assets that genuinely out-earn the index share one trait: each takes on more risk to get there. That’s the second half of the story, with no exceptions.</p>
+
+<h3 id="the-one-idea-that-dissolves-most-of-the-argument">The one idea that dissolves most of the argument</h3>
+
+<p>Total return has two parts:</p>
+
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>total return</mtext><mo>=</mo><munder><munder><mtext>price change</mtext><mo stretchy="true">⏟</mo></munder><mtext>capital</mtext></munder><mo>+</mo><munder><munder><mtext>income</mtext><mo stretchy="true">⏟</mo></munder><mtext>dividends, rent, coupons</mtext></munder></mrow><annotation encoding="application/x-tex">\text{total return} = \underbrace{\text{price change}}_{\text{capital}} + \underbrace{\text{income}}_{\text{dividends, rent, coupons}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord">total return</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.3591em;vertical-align:-1.6647em;"></span><span class="minner munder"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-1.4715em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">capital</span></span></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="minner munder"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span class="svg-align" style="top:-2.1576em;"><span class="pstrut" style="height:3em;"></span><span class="stretchy" style="height:0.548em;min-width:1.6em;"><span class="brace-left" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMinYMin slice"><path d="M0 6l6-6h17c12.688 0 19.313.3 20 1 4 4 7.313 8.3 10 13
+ 35.313 51.3 80.813 93.8 136.5 127.5 55.688 33.7 117.188 55.8 184.5 66.5.688
+ 0 2 .3 4 1 18.688 2.7 76 4.3 172 5h399450v120H429l-6-1c-124.688-8-235-61.7
+-331-161C60.687 138.7 32.312 99.3 7 54L0 41V6z"/></svg></span><span class="brace-center" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMidYMin slice"><path d="M199572 214
+c100.7 8.3 195.3 44 280 108 55.3 42 101.7 93 139 153l9 14c2.7-4 5.7-8.7 9-14
+ 53.3-86.7 123.7-153 211-199 66.7-36 137.3-56.3 212-62h199568v120H200432c-178.3
+ 11.7-311.7 78.3-403 201-6 8-9.7 12-11 12-.7.7-6.7 1-18 1s-17.3-.3-18-1c-1.3 0
+-5-4-11-12-44.7-59.3-101.3-106.3-170-141s-145.3-54.3-229-60H0V214z"/></svg></span><span class="brace-right" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMaxYMin slice"><path d="M399994 0l6 6v35l-6 11c-56 104-135.3 181.3-238 232-57.3
+ 28.7-117 45-179 50H-300V214h399897c43.3-7 81-15 113-26 100.7-33 179.7-91 237
+-174 2.7-5 6-9 10-13 .7-1 7.3-1 20-1h17z"/></svg></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord text"><span class="mord">price change</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8424em;"><span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.6647em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:2.1381em;vertical-align:-1.4702em;"></span><span class="minner munder"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6679em;"><span style="top:-1.6659em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">dividends, rent, coupons</span></span></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="minner munder"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6679em;"><span class="svg-align" style="top:-2.352em;"><span class="pstrut" style="height:3em;"></span><span class="stretchy" style="height:0.548em;min-width:1.6em;"><span class="brace-left" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMinYMin slice"><path d="M0 6l6-6h17c12.688 0 19.313.3 20 1 4 4 7.313 8.3 10 13
+ 35.313 51.3 80.813 93.8 136.5 127.5 55.688 33.7 117.188 55.8 184.5 66.5.688
+ 0 2 .3 4 1 18.688 2.7 76 4.3 172 5h399450v120H429l-6-1c-124.688-8-235-61.7
+-331-161C60.687 138.7 32.312 99.3 7 54L0 41V6z"/></svg></span><span class="brace-center" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMidYMin slice"><path d="M199572 214
+c100.7 8.3 195.3 44 280 108 55.3 42 101.7 93 139 153l9 14c2.7-4 5.7-8.7 9-14
+ 53.3-86.7 123.7-153 211-199 66.7-36 137.3-56.3 212-62h199568v120H200432c-178.3
+ 11.7-311.7 78.3-403 201-6 8-9.7 12-11 12-.7.7-6.7 1-18 1s-17.3-.3-18-1c-1.3 0
+-5-4-11-12-44.7-59.3-101.3-106.3-170-141s-145.3-54.3-229-60H0V214z"/></svg></span><span class="brace-right" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMaxYMin slice"><path d="M399994 0l6 6v35l-6 11c-56 104-135.3 181.3-238 232-57.3
+ 28.7-117 45-179 50H-300V214h399897c43.3-7 81-15 113-26 100.7-33 179.7-91 237
+-174 2.7-5 6-9 10-13 .7-1 7.3-1 20-1h17z"/></svg></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord text"><span class="mord">income</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.648em;"><span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.4702em;"><span></span></span></span></span></span></span></span></span></span>
+
+<p>Yield is only the second term, and it isn’t free. When a stock pays a $1 dividend, its price is mechanically marked down by $1 on the ex-dividend date. You didn’t earn $1, you converted $1 of ownership into $1 of cash, and in a taxable account you also triggered a tax bill.</p>
+
+<p>The cleanest way to think about spending from a portfolio is the <strong>homemade dividend</strong>: sell 3.5% of your shares to get 3.5% of the portfolio in cash. The result matches a 3.5% dividend, with two advantages: you control the timing, and only the <em>gain</em> portion is taxed, at long-term capital-gains rates, which can be <strong>0% federal</strong> for a retiree living below the bracket ceiling (see the strategy post). A dividend, by contrast, taxes the whole distribution every year whether or not you needed the cash.</p>
+
+<p>So the burden of proof runs the other way. An income asset has to beat the index on total return, net of worse tax treatment, before its “paycheck” is worth anything.</p>
+
+<h3 id="the-contenders-at-a-glance">The contenders at a glance</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Asset</th>
+      <th>Typical yield</th>
+      <th>Long-run total return (nominal)</th>
+      <th>Liquidity</th>
+      <th>Effort</th>
+      <th>Tax friction</th>
+      <th>Verdict</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>S&amp;P 500 index (total return)</strong></td>
+      <td>~1.3%</td>
+      <td><strong>~10%</strong></td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Deferred until you sell, LTCG</td>
+      <td>The baseline</td>
+    </tr>
+    <tr>
+      <td>Nasdaq-100 index (QQQ)</td>
+      <td>~0.6%</td>
+      <td>~11% since 1999, ~19%/yr since 2010</td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Deferred until you sell, LTCG</td>
+      <td>More growth, more volatility, a tech bet</td>
+    </tr>
+    <tr>
+      <td>Dividend-stock ETF (SCHD, VYM)</td>
+      <td>~3.0-3.5%</td>
+      <td>~9-10%</td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Qualified div taxed yearly</td>
+      <td>Return relocated, not added</td>
+    </tr>
+    <tr>
+      <td>Covered-call “income” ETF (JEPI, QYLD)</td>
+      <td>~7-12%</td>
+      <td>well below equities</td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Ordinary income + return of capital</td>
+      <td>Yield illusion</td>
+    </tr>
+    <tr>
+      <td>REIT index (VNQ)</td>
+      <td>~3.5-4%</td>
+      <td>~8-9%</td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Mostly ordinary income</td>
+      <td>Diversifier, hold tax-sheltered</td>
+    </tr>
+    <tr>
+      <td>Rental property, unlevered</td>
+      <td>~4-6% cap rate</td>
+      <td>~6-9% gross, less after costs</td>
+      <td>Months</td>
+      <td>High</td>
+      <td>Depreciation shelter</td>
+      <td>Below the index, and a job</td>
+    </tr>
+    <tr>
+      <td>Rental property, 25% down</td>
+      <td>cash-on-cash ~0% today</td>
+      <td>~11% on equity at +3% (swings both ways)</td>
+      <td>Months</td>
+      <td>High</td>
+      <td>Depreciation + 1031</td>
+      <td>Can beat the index, with leverage risk</td>
+    </tr>
+    <tr>
+      <td>Bonds (AGG)</td>
+      <td>~4-5%</td>
+      <td>~4-5%</td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Ordinary income</td>
+      <td>Stability, not growth</td>
+    </tr>
+    <tr>
+      <td>Cash (HYSA, MMF, T-bills)</td>
+      <td>~4-5%</td>
+      <td>~0-2% real</td>
+      <td>Instant</td>
+      <td>~None</td>
+      <td>Ordinary income</td>
+      <td>Dry powder, not wealth</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Every figure is a rough long-run range, not a promise. The point is the shape, not the third decimal.</p>
+
+<h3 id="dividend-stock-etfs">Dividend-stock ETFs</h3>
+
+<p>SCHD, VYM, HDV, DVY: a basket of established, profitable, dividend-paying companies yielding two to three times the S&amp;P 500, with lower volatility. All real, none of it a scam, just not what people think.</p>
+
+<p>What people think they’re buying: the market’s growth plus a fat yield on top. What they’re actually buying: a <strong>value-and-quality tilt</strong> on the same market, where more of the total return is paid out as dividends instead of retained as price appreciation. Historically that has delivered roughly market-like total returns with somewhat lower drawdowns. Through the tech-led 2010s and 2020s it trailed the S&amp;P 500 on total return, because it underweights the high-growth, low-dividend names that drove the index.</p>
+
+<p>The lower volatility is real, especially near retirement, but the yield is not alpha. It’s return handed to you on the company’s schedule, taxed every year in a taxable account whether or not you wanted the cash. If the discipline of a rising dividend keeps you from selling in a panic, hold it. Just don’t expect it to beat the index. On the evidence, it roughly matches or lags.</p>
+
+<h3 id="covered-call-income-etfs">Covered-call “income” ETFs</h3>
+
+<p>This is the category to be most suspicious of, because it’s marketed the hardest and understood the least. JEPI, JEPQ, QYLD, XYLD, RYLD advertise 7% to 12% “yields,” which looks like magic next to 4% Treasuries.</p>
+
+<p>It isn’t magic. These funds hold stocks and <strong>sell call options</strong> against them. The option premium becomes the distribution. In exchange, you give up your upside: when the market rips, the fund keeps the small premium and forfeits the gain above the strike. In flat or falling markets, the premium doesn’t cover the losses. You’ve sold the one thing equities are for, the right tail, and kept the volatility.</p>
+
+<p>QYLD is the cautionary example: a fat monthly distribution for years while the share price ground steadily down, with much of that distribution historically classified as <strong>return of capital</strong>, meaning the fund handed you back your own money and called it income. Its total return has badly lagged just owning the Nasdaq-100. JEPI is better built with a real risk-management story, but by construction lags the S&amp;P 500 in up markets. It’s a lower-volatility equity-income sleeve, not a free 8%.</p>
+
+<p>The tell is always the same: when the yield is far above what safe bonds pay, the extra is either your own capital coming back, or compensation for a risk that hasn’t shown up yet.</p>
+
+<h3 id="reits">REITs</h3>
+
+<p>Real estate investment trusts are the honest middle ground between a dividend ETF and being a landlord. Buy VNQ and own a diversified, liquid slice of commercial real estate, apartments, warehouses, cell towers, data centers, at a ~3.5-4% yield, no tenants, same-day liquidity. Long-run total returns run roughly high single digit, near equities over long windows, sometimes a bit under.</p>
+
+<p>Two caveats. REITs are more <strong>rate-sensitive</strong> and, in a real crash, more correlated with stocks than the “different asset class” pitch suggests: they fell hard in 2008 and again in 2022. And REIT dividends are mostly non-qualified, taxed as ordinary income, which is tax-ugly in a taxable account, so that high-yield tax-inefficient asset belongs in a Roth or IRA (see the strategy post). As a diversifier in the right account, REITs are defensible. As a replacement for the index, they aren’t a clear win.</p>
+
+<h3 id="rental-property">Rental property</h3>
+
+<p>This is the one that feels most like real wealth, and the most misunderstood, because it’s almost never as passive as the pitch. A rental is a <strong>leveraged small business</strong>, and its returns only make sense accounting for both words.</p>
+
+<p>Start unlevered. The cap rate (net operating income divided by price) runs around 4-6% in most US metros, and long-run appreciation roughly tracks inflation plus 2-4%. So the gross unlevered total return sits around 6-9%, already below the S&amp;P 500’s ~10%, before vacancy, maintenance, the capex that arrives regardless (roof, HVAC, water heater), property tax, insurance, and a property manager taking ~8-10% or your own unpaid hours. Add transaction costs of roughly 6-10% round trip, and the fact that you can’t sell a bedroom for cash, and the passive story is in trouble.</p>
+
+<p>So where’s the appeal? <strong>Leverage.</strong> A rental is one place an ordinary person can borrow cheaply, for thirty years, at a fixed rate, on a non-callable loan, against an appreciating asset, and keep all the appreciation on the bank’s money. That’s a genuine edge the index can’t replicate.</p>
+
+<p>Take a $400,000 house: 25% down ($100,000 of your own money), a $300,000 mortgage at 7% over 30 years. Rent for $2,800/month ($33,600/year). After operating costs (property tax ~$4,400, insurance ~$1,500, maintenance/capex reserves ~$3,000, vacancy ~$2,350, management ~$2,690), net operating income is about <strong>$19,600</strong>, a ~4.9% cap rate. The mortgage eats ~$24,000/year, so year-one <strong>cash flow is about negative $4,400</strong>. At today’s rates a freshly bought rental usually bleeds cash rather than paying you.</p>
+
+<p>The return comes from three other places, all measured against your $100,000 of equity:</p>
+
+<ul>
+  <li><strong>Appreciation on the whole $400,000</strong>, not just your slice. A 3% year is $12,000, or 12% on your equity, the entire point of the mortgage.</li>
+  <li><strong>Principal paydown</strong>: the tenant retires about $3,000 of your loan in year one, more each year after.</li>
+  <li><strong>Depreciation</strong>: a ~$11,600/year paper deduction sheltering the rental’s income, deferred and recaptured at 25% when you sell.</li>
+</ul>
+
+<p>Net cash flow and paydown against appreciation, year one on your $100,000 of equity looks like this:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Home price change</th>
+      <th>Appreciation on $400k</th>
+      <th>Paydown</th>
+      <th>Cash flow</th>
+      <th>Return on equity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>-5%</strong></td>
+      <td>-$20,000</td>
+      <td>+$3,000</td>
+      <td>-$4,400</td>
+      <td><strong>-21%</strong></td>
+    </tr>
+    <tr>
+      <td><strong>0%</strong></td>
+      <td>$0</td>
+      <td>+$3,000</td>
+      <td>-$4,400</td>
+      <td><strong>-1%</strong></td>
+    </tr>
+    <tr>
+      <td><strong>+3%</strong></td>
+      <td>+$12,000</td>
+      <td>+$3,000</td>
+      <td>-$4,400</td>
+      <td><strong>+11%</strong></td>
+    </tr>
+    <tr>
+      <td><strong>+5%</strong></td>
+      <td>+$20,000</td>
+      <td>+$3,000</td>
+      <td>-$4,400</td>
+      <td><strong>+19%</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>At 3% appreciation the leveraged rental returns about <strong>11% on equity</strong>, edging the S&amp;P 500’s ~10%, with the depreciation shelter nudging it a bit higher. That’s the bull case, and it’s real. But leverage is symmetric: a 5% dip in home prices, well inside normal, is a <strong>21% loss</strong> on your equity, arriving while the property is still costing you cash every month. Two of those years early on can vaporize much of your down payment while you field 2 a.m. maintenance calls. The sub-3% mortgages of 2020-2021 threw off fat positive cash flow and made this look easy. The identical house at 7% is a thinner, riskier trade. Leverage didn’t hand you a free 11%, it widened the whole range of outcomes.</p>
+
+<p>Beyond price risk: concentration (one property, one neighborhood, one tenant, one furnace), illiquidity (months to exit, large frictions), and a real recurring time cost the pro forma never shows. Rental property can pay well if you want to run a small, leveraged business with tax advantages. If you wanted passive, it’s the wrong tool, and the S&amp;P 500 wins on a risk- and effort-adjusted basis for almost everyone.</p>
+
+<h3 id="bonds-and-cash">Bonds and cash</h3>
+
+<p>Treasuries, bond funds, high-yield savings, money-market funds, CDs: yields look great right now at roughly 4-5%, but that’s nominal. After 2-3% inflation the real return sits between zero and 2%. Their job isn’t building wealth, it’s holding still: stability that lets you rebalance into a crash, and dry powder that stops you from force-selling equities at the bottom. Over a multi-decade horizon they trail equities so badly that the cash-vs-S&amp;P chart in the first post is almost comical. Hold them for the buffer, not the income line.</p>
+
+<h3 id="further-out-on-the-yield-curve">Further out on the yield curve</h3>
+
+<p>Beyond these sit the exotics people reach for when 4% isn’t enough: preferred stock, business development companies (BDCs), master limited partnerships (MLPs), private credit and peer-to-peer lending. The pattern is identical every time: the headline yield is higher (8%, 10%, sometimes more), and so is exactly one other thing, the risk you’re paid to carry. Preferreds behave like junior bonds with equity-like drawdowns. BDCs are leveraged lenders to small companies, wonderful until a credit cycle turns. MLPs bolt a K-1 tax form and pipeline-specific risk onto your taxes. Private credit adds illiquidity and often a valuation that isn’t marked to market, which feels like low volatility and isn’t. None of these are free lunches. The yield is the invoice for the risk.</p>
+
+<h3 id="what-the-gap-actually-looks-like">What the gap actually looks like</h3>
+
+<p>$100k invested for 25 years at the total-return rates above, held constant for illustration. Real history is lumpier than smooth curves, but the <em>spacing</em> between the lines is the point.</p>
+
+<pre><code class="language-mermaid">%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#00acc1,#c62828,#2e7d32,#1565c0,#f9a825,#9c27b0"}}}}%%
+xychart-beta
+    title "Growth of $100k over 25 years (assumed constant nominal returns)"
+    x-axis "Years" 0 --&gt; 25
+    y-axis "Value ($k)" 0 --&gt; 1800
+    line [100, 176, 311, 547, 965, 1700]
+    line [100, 161, 259, 418, 673, 1083]
+    line [100, 169, 284, 478, 806, 1359]
+    line [100, 154, 237, 364, 560, 862]
+    line [100, 134, 179, 240, 321, 429]
+    line [100, 110, 122, 135, 149, 164]
+</code></pre>
+
+<p><strong>Cyan</strong> = Nasdaq-100 at a conservative 12%. <strong>Red</strong> = S&amp;P 500 at 10%. <strong>Green</strong> = leveraged rental in its good case (~11% on equity, from the table above). <strong>Blue</strong> = dividend ETF at 9%. <strong>Amber</strong> = covered-call fund at 6%. <strong>Purple</strong> = cash at 2%. One percentage point of annual return (the red-to-blue gap) is worth about <strong>$220k</strong> over 25 years on a $100k stake. The amber covered-call line pays fat “income” the whole way and still finishes with less than half of the plain index, because yield was never the return. The green leveraged rental only draws this cleanly assuming steady 3% appreciation forever, and one -5% year strips 21% off its equity while still costing cash monthly. The cyan Nasdaq-100 earns its top spot on recent decades alone: over its full life since 1999 it compounded about 11% a year, in the same range as the good-case rental, because it reached the modern era only after an 83% dot-com collapse and a 53% fall in 2008.</p>
+
+<p>Only the cyan Nasdaq-100 and green leveraged rental clear the red S&amp;P line. The Nasdaq did it with zero effort, no tenants, no roof to replace, its own quiet lesson: you didn’t need to become a landlord to beat the landlord, only to own more of the right businesses and sit still. But both winners got there the same way: <strong>the dependable route to beating a broad index is taking on more risk</strong>, in one of its costumes: concentration (a tech-only bet), leverage (a mortgage that magnifies losses as fast as gains), illiquidity (a house you can’t sell in a week), or raw volatility (an 83% drawdown you have to live through). The S&amp;P 500 already sits on a brutally efficient point of the risk-and-return curve: 500 businesses, nearly free, effortless, liquid. You can out-earn it, but the market charges admission, paid in sleepless drawdowns, a second job, or a concentrated bet that can just as easily reverse.</p>
+
+<p>The Nasdaq’s recent run is the single strongest challenge to all of this, worth seeing in real numbers:</p>
+
+<pre><code class="language-mermaid">%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#00acc1,#c62828"}}}}%%
+xychart-beta
+    title "Actual growth of $100 since Jan 2010, after the 2007-2009 crash (total return)"
+    x-axis "Year" 2010 --&gt; 2026
+    y-axis "Value ($)" 0 --&gt; 1600
+    line [100, 125, 196, 252, 373, 517, 971, 987, 1520]
+    line [100, 117, 175, 200, 279, 350, 531, 542, 803]
+</code></pre>
+
+<p><strong>Cyan</strong> = Nasdaq-100 (QQQ), <strong>red</strong> = S&amp;P 500 (SPY), each starting at $100 on the first trading day of 2010. By early 2026 that $100 became about <strong>$1,520</strong> in the Nasdaq and <strong>$803</strong> in the S&amp;P, roughly 19% against 14% a year. That’s the strongest case on this page for reaching past the plain index. But the Nasdaq reached this chart’s 2010 starting line only by surviving an 83% fall from 2000 to 2002 and a 53% fall in 2008, and across its entire life since 1999 it compounded about 11% a year, near the good-case leveraged rental. Recent dominance and long-run parity with a mortgaged duplex are both true at once, and which one you get depends on how many of those crashes land inside your holding period. Source: QQQ and SPY total return with dividends reinvested, via Yahoo Finance, 2010 through July 2026.</p>
+
+<h3 id="so-when-does-an-income-asset-actually-make-sense">So when does an income asset actually make sense?</h3>
+
+<p>There are honest reasons to hold income assets:</p>
+
+<ul>
+  <li><strong>Behavior.</strong> The best portfolio is the one you can hold through a 40% drop. If a visible, rising dividend keeps you from panic-selling, the “worse” asset you keep beats the “better” index you bail out of.</li>
+  <li><strong>The withdrawal phase.</strong> Some retirees sleep better spending only the income and never touching principal. Homemade dividends are more efficient, but a natural yield keeping a nervous retiree invested has real value.</li>
+  <li><strong>Diversification and shallower drawdowns.</strong> Dividend, low-volatility, and REIT sleeves can soften sequence-of-returns risk in the years right around retirement.</li>
+  <li><strong>Leverage and tax, on rentals specifically.</strong> Running a leveraged small business and harvesting depreciation and 1031 deferral is a real edge the index can’t replicate, but it comes with a second job.</li>
+</ul>
+
+<p>The through-line: reach for an income asset for behavior, diversification, or leverage, deliberately and with eyes open. Not because yield sounds bigger than return. On the evidence, it usually isn’t.</p>
+
+<h3 id="the-one-liner">The one-liner</h3>
+
+<p>A dividend and a rent check feel like the asset paying you. A rising index feels like nothing is happening until the day you sell. The feeling is backwards. Yield is a withdrawal the market schedules on your behalf, taxed on its timetable, not yours. Return is what you keep after tax and after effort. Keep the S&amp;P 500 as the core, add income assets sparingly and for the right reasons, and when something promises to beat the index, find the extra risk it’s asking you to carry before you believe it. It’s always in there somewhere.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/my-investing-strategy">Investing strategy, from the basics up</a>
+            <small>2026-05-31</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/why-should-we-invest-our-money">Why should we invest our money?</a>
+            <small>2026-05-18</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

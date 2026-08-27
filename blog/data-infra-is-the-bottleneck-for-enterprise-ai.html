@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Data infrastructure is the bottleneck for enterprise AI, not the models">
+  <meta property="og:description" content="Most discussion of enterprise AI is about models. This post is about the layer underneath them, the data infrastructure that quietly decides whether any of that AI actually works, and it builds up ...">
+  <meta property="og:url" content="https://takasoft.io/blog/data-infra-is-the-bottleneck-for-enterprise-ai">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Data infrastructure is the bottleneck for enterprise AI, not the models">
+  <meta name="twitter:description" content="Most discussion of enterprise AI is about models. This post is about the layer underneath them, the data infrastructure that quietly decides whether any of that AI actually works, and it builds up ...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Data infrastructure is the bottleneck for enterprise AI, not the models - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Data infrastructure is the bottleneck for enterprise AI, not the models</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-05-05T00:00:00+00:00">
+          2026-05-05
+        </time>
+      </span>
+    </span>
+    <p>Most discussion of enterprise AI is about models. This post is about the layer underneath them, the data infrastructure that quietly decides whether any of that AI actually works, and it builds up from the ground.</p>
+
+<p>The first half is a plain-language primer: what a data pipeline even is, and why an AI system needs one. If you have used ChatGPT, Gemini, or Copilot but never built a model or a pipeline yourself, start here. The second half is the argument I actually want to make, that this layer (not the model) is the real bottleneck for enterprise AI. If you already build pipelines for a living, skip ahead to <a href="#models-are-getting-commoditized-fast">why the data is the bottleneck</a>.</p>
+
+<h3 id="start-with-a-question-why-does-ai-need-anything-between-it-and-the-data">Start with a question: why does AI need anything <em>between</em> it and the data?</h3>
+
+<p>When you ask ChatGPT, Gemini, or Copilot a general-knowledge question, it “knows” the answer in some sense: the knowledge is baked into the model from training. That is the easy case.</p>
+
+<p>Now imagine an AI system that is supposed to answer questions about <em>your company</em>. <em>“How many packages did we ship to California last week?”</em> The model was trained on the public internet, so it does not know anything about your company. To answer that question, it has to be <em>given</em> the relevant data, pulled from your databases, transformed into something it can read, and handed to it as context.</p>
+
+<p>Here is the catch: the data you have in your databases is almost never in a form that the model, or anything else, can use directly.</p>
+
+<h3 id="what-raw-data-actually-looks-like">What raw data actually looks like</h3>
+
+<p>Imagine you run an e-commerce business. Your “shipping data” is not one table. In reality it is:</p>
+
+<ul>
+  <li>An <code class="language-plaintext highlighter-rouge">orders</code> table in your transactional database, with one row per order placed.</li>
+  <li>A <code class="language-plaintext highlighter-rouge">customers</code> table in a separate system, with one row per customer.</li>
+  <li>A <code class="language-plaintext highlighter-rouge">returns</code> table, populated by a different system, with one row per item returned.</li>
+  <li>A <code class="language-plaintext highlighter-rouge">shipments</code> feed from your logistics provider’s API, refreshed every few minutes, with carrier and tracking number.</li>
+  <li>A <code class="language-plaintext highlighter-rouge">delivery_photos</code> bucket in <strong>object storage</strong> (Amazon S3, Azure Blob Storage, Google Cloud Storage), where the driver uploads a “proof of delivery” photo of the package at the doorstep when each shipment is completed. The file paths look like <code class="language-plaintext highlighter-rouge">s3://delivery-photos/2026/05/14/&lt;shipment_id&gt;.jpg</code>, but the metadata about which shipment a photo belongs to, when it was taken, and whether the customer disputed delivery lives back in another database.</li>
+  <li>A <code class="language-plaintext highlighter-rouge">regions</code> mapping in a Google Sheet that the operations team updates by hand, mapping zip codes to delivery regions.</li>
+  <li>A <code class="language-plaintext highlighter-rouge">currency_rates</code> feed from a financial data vendor, pulled hourly.</li>
+</ul>
+
+<p>Notice that the data lives in different <em>kinds</em> of systems. Some of it sits in relational databases as neat rows and columns. Some of it sits as photos (or PDFs, audio clips, video) in object storage, where each file has a path but no schema. Some of it lives in spreadsheets that humans edit by hand. A complete picture of the business requires reading from all of these systems and assembling the pieces, and each kind of system has its own access pattern, access controls, and quirks.</p>
+
+<p>To answer <em>“how many packages did we ship to California last week, by carrier, in USD”</em>, you have to join all of these together. The customer’s California-ness lives in <code class="language-plaintext highlighter-rouge">customers</code>. The carrier lives in <code class="language-plaintext highlighter-rouge">shipments</code>. The dollar amount lives in <code class="language-plaintext highlighter-rouge">orders</code>, but in the customer’s local currency, so you have to convert it using <code class="language-plaintext highlighter-rouge">currency_rates</code>. You have to subtract returns. You have to group by carrier. You have to filter to last week.</p>
+
+<p>None of that is AI work. It is <em>data work</em>. And no model in the world can do it without the data being prepared first. (Yes, you could in principle ask a model to write the SQL for you, modern models are quite good at this, but you still have to run that SQL against the actual data, on infrastructure that knows where every piece lives and can put them together reliably and on schedule.)</p>
+
+<h3 id="what-is-data-ingestion">What is “data ingestion”?</h3>
+
+<p>Before any of that, before you can model the data, before you can build pipelines, before you can join <code class="language-plaintext highlighter-rouge">customers</code> to <code class="language-plaintext highlighter-rouge">shipments</code>, you have to actually get the data into a place where you can work with it. That step is called <strong>data ingestion</strong>, and it is its own engineering discipline. The phrase shows up regularly in job postings as “data ingestion engineer,” “data integration engineer,” or sometimes folded into “data platform engineer.”</p>
+
+<p>Ingestion is the work of moving data from where it is <em>generated</em> (application databases, third-party APIs, IoT sensors, vendor file drops, mobile app event streams, photo uploads from a delivery driver’s phone) into a central place where it can be queried and combined. Concretely, this might mean:</p>
+
+<ul>
+  <li>Replicating new rows from the production <code class="language-plaintext highlighter-rouge">orders</code> PostgreSQL database into your data warehouse every few minutes (a technique called <strong>change data capture</strong>, or CDC).</li>
+  <li>Pulling the daily <code class="language-plaintext highlighter-rouge">currency_rates</code> CSV from your vendor’s SFTP server every morning.</li>
+  <li>Subscribing to a Kafka topic of mobile app events and writing each event out as a Parquet file in S3.</li>
+  <li>Polling a third-party logistics API every five minutes and storing each response as a JSON record.</li>
+  <li>Copying delivery photos uploaded by drivers into your central object-storage bucket, with metadata recorded in a separate index so downstream queries can find them.</li>
+</ul>
+
+<p>Done well, ingestion is invisible: data shows up where downstream teams expect it, fresh, complete, and on schedule. Done poorly, every downstream team builds its own bespoke connection to every source, the same data gets pulled five different ways, nobody knows which copy is authoritative, and your cloud bill starts climbing mysteriously.</p>
+
+<p>Ingestion is upstream of everything else in this post. Without it, there is nothing to model and nothing to transform.</p>
+
+<h3 id="data-is-never-clean">Data is never clean</h3>
+
+<p>Here is something that is rarely covered in school: the data you ingest is never clean.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">customers</code> table I described above is a good example. The same person might have signed up three times with slightly different details: <code class="language-plaintext highlighter-rouge">john.smith@gmail.com</code>, <code class="language-plaintext highlighter-rouge">John.Smith@gmail.com</code>, and <code class="language-plaintext highlighter-rouge">jsmith@gmail.com</code> (different email, probably same person), with three slightly different mailing addresses (<code class="language-plaintext highlighter-rouge">123 Main Street</code>, <code class="language-plaintext highlighter-rouge">123 Main St</code>, <code class="language-plaintext highlighter-rouge">123 Main St. Apt 4B</code>) and three different phone formats. To the database, those are three customers. To your business, they are one. If you join <code class="language-plaintext highlighter-rouge">orders</code> directly against <code class="language-plaintext highlighter-rouge">customers</code> without resolving this, your “customers in California” count is overstated on day one, and the gap widens over time.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">shipments</code> feed has its own duplicate problem: the carrier’s API sometimes emits the same shipment event twice (network retries, idempotency bugs upstream), so one physical shipment shows up as two rows with the same tracking number. If you do not catch this, your “packages shipped last week” number goes up artificially, and so does your estimated operational cost.</p>
+
+<p>These are not edge cases. Every real-world data source has issues like this: duplicates, schema drift, late-arriving rows, time-zone confusion, units that disagree across systems, encoding bugs, sentinel values like <code class="language-plaintext highlighter-rouge">9999-12-31</code> standing in for “no date,” and so on. A substantial part of the data engineering job is finding these issues, writing rules to resolve them (often called <strong>entity resolution</strong> for the deduplication case), and continuously applying those rules as new data flows in. The cleaned, deduplicated, validated tables are what downstream consumers, including AI models, actually want to query. The raw tables are not safe to use directly.</p>
+
+<p>Modern AI makes this <em>worse</em>, not better. If you feed a model an inflated customer count or a duplicated shipment, the model will confidently report the wrong answer. It will not flag the duplicates for you. Whatever sloppiness exists in your data, the AI inherits, and produces wrong answers at a much larger scale than a human analyst would have.</p>
+
+<h3 id="what-is-data-modeling">What is “data modeling”?</h3>
+
+<p>The set of decisions about <em>what shape your data should take to be useful</em> is what data engineers call <strong>data modeling</strong>. It is design work, not coding.</p>
+
+<p>For our e-commerce example, a data engineer would decide that:</p>
+
+<ul>
+  <li>There will be a clean, deduplicated <code class="language-plaintext highlighter-rouge">customers</code> table with one row per real-world customer (resolving duplicate sign-ups, normalizing email addresses, deciding what “customer” even means when a household shares an account).</li>
+  <li>There will be a <code class="language-plaintext highlighter-rouge">daily_shipments</code> table with one row per shipment per day, in USD, with region, carrier, and customer attributes already joined in.</li>
+  <li>There will be a <code class="language-plaintext highlighter-rouge">monthly_revenue_by_region</code> table aggregated up from the daily one, ready for the finance team.</li>
+</ul>
+
+<p>Each of these is a <em>derived</em> table, meaning it is <strong>computed</strong> from the raw tables, not directly captured. The data engineer’s job is to decide what derived tables should exist, what columns they should have, and how they are computed from raw data.</p>
+
+<p>This is design work, like designing a database schema or an API. Two different teams given the same raw data will produce very different derived tables, with very different downstream consequences. Good data modeling pays back for years. Bad data modeling produces years of pain.</p>
+
+<h3 id="what-is-a-data-pipeline">What is a “data pipeline”?</h3>
+
+<p>OK, so you have decided which derived tables you want. Now you need to <em>compute and maintain</em> them. That is what a <strong>data pipeline</strong> is: the machinery that reads from raw tables, transforms the data according to your model, and writes the results into derived tables, kept fresh as new raw data arrives.</p>
+
+<p>A pipeline for the <code class="language-plaintext highlighter-rouge">daily_shipments</code> table might look like:</p>
+
+<ol>
+  <li>Every hour, read all new rows from <code class="language-plaintext highlighter-rouge">orders</code> and <code class="language-plaintext highlighter-rouge">shipments</code> since the last run.</li>
+  <li>Join them with <code class="language-plaintext highlighter-rouge">customers</code> to attach region and segment.</li>
+  <li>Join with <code class="language-plaintext highlighter-rouge">currency_rates</code> to convert to USD.</li>
+  <li>Subtract any returns from <code class="language-plaintext highlighter-rouge">returns</code> that arrived for orders in this batch.</li>
+  <li>Group by day, region, and carrier.</li>
+  <li>Write the result into <code class="language-plaintext highlighter-rouge">daily_shipments</code>, replacing the day’s rows if they were partially recomputed.</li>
+  <li>Log what was processed, in case something goes wrong and you need to backfill.</li>
+</ol>
+
+<p>Each step is code, often SQL, sometimes Python, sometimes Spark or Flink, running on a server somewhere, on a schedule (or in response to an event). A typical enterprise has <em>hundreds</em> of these pipelines, all running, all needing to be monitored, fixed when an upstream source goes down, updated when a schema changes, and re-run when a bug is found.</p>
+
+<p>This is the “data engineering” part of the stack. It is most of the engineering work that goes into a real-world AI system.</p>
+
+<h3 id="the-layers-top-to-bottom">The layers, top to bottom</h3>
+
+<p>Once you internalize the idea, the modern data stack falls into a few layers:</p>
+
+<ul>
+  <li><strong>Sources</strong> — where data is created. Application databases, event streams, third-party APIs, files dropped into a folder, sensors.</li>
+  <li><strong>Storage</strong> — where data is kept once you collect it. Data warehouses (Snowflake, BigQuery) and data lakes (Amazon S3 with Apache Iceberg, Databricks) are the two main flavors. The distinction matters less than it used to.</li>
+  <li><strong>Transformation</strong> — the pipelines that turn raw data into derived tables. This is where tools like dbt, Snowflake Dynamic Tables, Apache Spark, and the project I am building, <a href="https://github.com/takasoft/floe">Floe</a>, live.</li>
+  <li><strong>Serving</strong> — how downstream consumers read the cleaned, modeled data. BI dashboards (Tableau, Power BI), ML feature stores, vector indexes for LLM retrieval, and the AI applications themselves.</li>
+</ul>
+
+<pre><code class="language-mermaid">flowchart LR
+    S[("Sources&lt;br/&gt;databases, events, APIs")] --&gt; ST[("Storage&lt;br/&gt;warehouses, lakes")]
+    ST --&gt; T["Transformation&lt;br/&gt;(pipelines + modeling)"]
+    T --&gt; SV[("Derived tables&lt;br/&gt;daily_shipments, etc.")]
+    SV --&gt; D[Dashboards &amp;amp; BI]
+    SV --&gt; M[ML feature pipelines]
+    SV --&gt; A[LLM retrieval / agents]
+</code></pre>
+
+<p>Most enterprise AI ambition lives in the last layer on the right, the <strong>ML feature pipelines</strong> and <strong>LLM retrieval / agents</strong> boxes. But most of the engineering cost lives in the <strong>Transformation</strong> layer in the middle. That is the gap I find most interesting to work on, and the gap most enterprises are still digging out of.</p>
+
+<h3 id="why-this-exists-at-all">Why this exists at all</h3>
+
+<p>Here is the honest answer to <em>“why does AI need a data pipeline?”</em>: <strong>the same reason a CEO does, the same reason your finance team does, the same reason your customer-success dashboard does.</strong> None of them can read raw transactional data and produce useful answers either.</p>
+
+<p>A data pipeline is not an AI thing. It is the universal layer that any consumer of company data, human or model, needs in order to work. AI just made it more visible, because (a) AI systems are extraordinarily sensitive to data quality, and (b) AI projects have higher visibility and bigger budgets, so when an AI rollout fails because of a broken pipeline, people notice in a way they did not notice when an executive dashboard had bad numbers.</p>
+
+<p>The alternative, every team querying raw data directly, building their own transformations, getting different numbers, breaking when schemas change, does exist, in plenty of companies. It is what people mean when they say <em>“our data is a mess.”</em> It is also what most data engineers spend their careers trying to fix.</p>
+
+<h3 id="why-this-is-good-news-if-you-are-learning">Why this is good news if you are learning</h3>
+
+<p>If you have been hearing AI hype and feeling like the only way to participate is to learn how to train transformer models, this is the news: most of the actual work, and most of the actual hiring, is in the layer I just described. SQL, data modeling, pipeline orchestration, infrastructure: these are durable, learnable skills that do not require a PhD or a GPU cluster, and they are less prone to obsolescence than any specific modeling technique.</p>
+
+<p>That layered picture is also exactly why I think this layer, not the model, is where enterprise AI is really won or lost. After several years of building data infrastructure in logistics and now enterprise AI, my view is blunt: <strong>the real bottleneck is data infrastructure, and most companies will never get the full value of AI until they fix it.</strong> The GIGO (“garbage in, garbage out”) principle has been around for as long as computing itself, and it applies in full force to AI: a frontier model fed stale, biased, malformed, or fragmented data produces stale, biased, malformed, or fragmented outputs, at machine speed and machine scale. The model is the easy part. The rest of this post is why that bottleneck, both at the company level and the country level, depends far more on the underlying data plumbing than on which model sits on top of it.</p>
+
+<h3 id="models-are-getting-commoditized-fast">Models are getting commoditized fast</h3>
+
+<p>OpenAI, Anthropic, Google, Meta, Mistral, DeepSeek, Qwen — there are now half a dozen credible frontier model providers, and the gap between them on most enterprise tasks is small. Open-weight models from a year ago are roughly comparable to the proprietary models of the moment they were released. Inference cost per token has fallen by orders of magnitude.</p>
+
+<p>What that means in practice for an enterprise: the model you choose is not your moat. Anyone can swap from one model to another with a few config changes. If your competitive advantage is “we use GPT-5 instead of GPT-4,” your competitive advantage will evaporate the day GPT-6 ships.</p>
+
+<p>The actual moat is what you feed the model. Specifically:</p>
+
+<ol>
+  <li>The data your AI has access to that nobody else has</li>
+  <li>The freshness of that data</li>
+  <li>The quality, structure, and completeness of that data</li>
+  <li>Your ability to feed it to the model reliably, at scale, with appropriate filtering and grounding</li>
+</ol>
+
+<p>This is all infrastructure. None of it is “AI” in the popular sense.</p>
+
+<h3 id="the-data-problem-is-bigger-than-the-model-problem">The data problem is bigger than the model problem</h3>
+
+<p>Anyone who has worked on a large-scale data pipeline knows that the messy reality of production data is the real engineering challenge. Data arrives late, in the wrong format, with missing fields, with duplicate records, with schema changes that nobody told you about, with timezone confusion, with units that disagree across upstream systems. The pipeline that handles all of this gracefully — that catches anomalies before they hit production, that gracefully degrades when an upstream goes down, that maintains lineage so you can debug what happened three weeks ago — is not a weekend project. It is years of infrastructure work.</p>
+
+<p>When companies bolt an LLM on top of a data system that has been duct-taped together for a decade, the LLM does not magically clean things up. It cheerfully produces confident-sounding answers based on whatever it was given. If the data was wrong, the answer is wrong, just expressed in better English.</p>
+
+<p>I have seen this pattern repeatedly. At Amazon, the team I was on ran event-driven pipelines processing very large volumes of delivery performance data every day — the infrastructure underneath the incentive program for the company’s last-mile delivery partners across multiple countries. The hard problem there was not the analytics on top, it was attribution: a delivery performance metric that does not distinguish controllable defects from uncontrollable ones — bad weather, traffic, system errors, customer-side data errors — produces unfair signals no matter how sophisticated the downstream model is. Getting that right meant joining heterogeneous signals (GPS, weather, traffic, system logs, address validation) at the per-event level. Until your infrastructure can do that, no model on top can make decisions that people will trust.</p>
+
+<p>At Microsoft, I see the same shape of problem in enterprise AI. I work on platform infrastructure that supports products like Copilot, Power Apps, Dynamics 365, and Power Automate across Azure regions globally, including government cloud environments, with high availability targets. The platform itself is extremely reliable. What tends to be missing is on the other side of the API: customers adopting these tools want agents, RAG (retrieval-augmented generation), tool use, copilots embedded in every workflow — but they have a tangle of internal systems, inconsistent identity, stale documents, manual approvals, ad-hoc data sources. The AI works fine in a demo and falls over in production, because the production data infrastructure on the customer side is not ready.</p>
+
+<h3 id="what-good-data-infrastructure-looks-like">What “good” data infrastructure looks like</h3>
+
+<p>If I had to name the properties that distinguish data infrastructure good enough for AI from infrastructure that is not, I would list four:</p>
+
+<p><strong>1. Reliability.</strong> Pipelines run on schedule, retry on failure, alert on anomalies, and never silently produce wrong outputs. If a piece of data is bad, the system knows and routes it to a quarantine queue rather than letting it propagate.</p>
+
+<p><strong>2. Freshness.</strong> Data flows from source to consumer with predictable, bounded latency. For most enterprise AI applications, freshness measured in minutes is the difference between useful and useless.</p>
+
+<p><strong>3. Quality validation at ingest.</strong> Bad data does not enter the system. Schema enforcement, statistical anomaly detection, and reference-data validation catch issues before they reach the model.</p>
+
+<p><strong>4. Lineage.</strong> When a downstream system produces a wrong answer, you can trace exactly which upstream record caused it, how it was transformed along the way, and when. Without lineage, you cannot debug AI failures.</p>
+
+<p>Notably, none of these are AI features. They are good engineering practices that have existed for decades. What is new is that we have stopped treating them as optional. Once you put an AI model on top, every weakness in the underlying infrastructure gets amplified.</p>
+
+<h3 id="why-this-matters-at-the-country-level">Why this matters at the country level</h3>
+
+<p>I think the same argument scales. The countries that will lead in enterprise AI are not the ones with the best models — that race is being run by a handful of companies and the gap is closing every quarter. The lead will go to the countries whose enterprises have built the best underlying data infrastructure: ingestion pipelines, quality frameworks, governance systems, identity, lineage, and the people who know how to build all of that.</p>
+
+<p>This is true for the economy as a whole and it is true for individual sectors. Logistics, healthcare, financial services, and manufacturing are the places where AI applied to good data will create huge value. They are also the places where data infrastructure is hardest, because the data is heterogeneous, regulated, and historically siloed.</p>
+
+<p>Most of the people doing the visible work right now are working on agents and models. There is plenty of attention on that. But there is also a quieter set of engineers building the plumbing — and that work will, I think, end up being the more durable contribution.</p>
+
+<h3 id="what-i-am-working-on">What I am working on</h3>
+
+<p>A lot of my time is now spent on this kind of infrastructure work, both in my day job and in personal open-source projects. I started <a href="https://github.com/takasoft/floe">Floe</a> recently — an early-stage open-source engine that targets one specific piece of this plumbing: <strong>keeping derived data tables fresh, automatically, as their sources change.</strong></p>
+
+<p>If that does not immediately mean anything, here is the simplest way I can put it:</p>
+
+<blockquote>
+  <p><strong>Floe is like a spreadsheet formula, but for database tables.</strong> When you put <code class="language-plaintext highlighter-rouge">=SUM(A1:A10)</code> into a spreadsheet cell, the cell updates automatically when any of A1 through A10 changes. Floe does the same thing, except the “cells” are large database tables with millions of rows, the “formula” is a SQL query, and “recalculating” means re-running the SQL incrementally on the part of the data that actually changed.</p>
+</blockquote>
+
+<p><strong>The problem in concrete terms.</strong> Imagine you run an e-commerce business. Your raw data is a table called <code class="language-plaintext highlighter-rouge">orders</code> — every transaction as it happens. For analytics, dashboards, or AI, you do not want to query raw <code class="language-plaintext highlighter-rouge">orders</code> directly: it is messy, it does not have customer region joined in, refunds are not subtracted, currency is not normalized. You want a <em>derived</em> table — say, <code class="language-plaintext highlighter-rouge">daily_sales_by_region</code> — that already does all of those things, kept up to date as new orders arrive.</p>
+
+<p>The standard way to build that today is to write a custom Spark or Redshift script that reads from <code class="language-plaintext highlighter-rouge">orders</code>, applies the transformations, writes the result to <code class="language-plaintext highlighter-rouge">daily_sales_by_region</code>, schedules itself to run every hour, monitors itself for failure, and gets rebuilt whenever the schema changes. Every team writes that boilerplate by hand for every derived table. A typical enterprise data platform might have hundreds of these. The result: most of an analytics team’s engineering time goes into orchestration plumbing rather than actual analysis.</p>
+
+<p><strong>What Floe does instead.</strong> You declare the derived table once, in plain SQL:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">DYNAMIC</span> <span class="k">TABLE</span> <span class="n">silver</span><span class="p">.</span><span class="n">daily_sales_by_region</span>
+  <span class="n">REFRESH_MODE</span> <span class="o">=</span> <span class="n">INCREMENTAL</span> <span class="k">AS</span>
+  <span class="k">SELECT</span> <span class="n">region</span><span class="p">,</span> <span class="k">SUM</span><span class="p">(</span><span class="n">amount_usd</span><span class="p">)</span> <span class="k">AS</span> <span class="n">total_sales</span>
+  <span class="k">FROM</span> <span class="n">bronze</span><span class="p">.</span><span class="n">orders</span>
+  <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">region</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>That is the entire pipeline. Floe figures out which raw tables this one depends on, watches them for new data, runs the SELECT only on the rows that have changed since the last refresh (not the entire history), writes the result back, and stamps every output row with the upstream snapshot it was computed from so you can trace any result back to its source.</p>
+
+<p>It does all of this on top of <a href="https://iceberg.apache.org/">Apache Iceberg</a>, an open table format that has rapidly become the industry standard for data lakes. That means the resulting tables are readable by any modern data tool — Spark, DuckDB, Trino, Snowflake, Databricks, BigQuery — without vendor lock-in. You can switch your query engine without rewriting your data.</p>
+
+<p><strong>Why it matters for AI.</strong> Models do not consume raw data. The pipeline from “events streaming into a database” to “data ready for a model to use” is exactly the layer where derived tables live — and where most of the engineering cost in an enterprise AI project actually sits.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    A[("Raw tables&lt;br/&gt;orders, events, telemetry")] --&gt;|Floe keeps fresh| B[("Derived tables&lt;br/&gt;cleaned, joined, aggregated")]
+    B --&gt; C[Analytics dashboards]
+    B --&gt; D[ML feature pipelines]
+    B --&gt; E[LLM retrieval &amp;amp; agent context]
+</code></pre>
+
+<p>If Floe makes that middle layer dramatically cheaper to build and operate, more organizations can afford to do real AI on real production data — not just polished demos on cleaned-up training sets. That is the long-term bet.</p>
+
+<p>It is early — v0.1 ships the core refresh engine and polling-based event-driven refresh; data quality routing, push-based event hooks, and multi-cloud deployment profiles are still on the roadmap. But the direction feels right. If “data infrastructure is the bottleneck for AI” is the thesis, then the most valuable thing I can spend nights and weekends on is not another agent demo — it is making the underlying plumbing better, more open, and more accessible to everyone trying to do real AI work.</p>
+
+<p>If you are working on similar problems, I would love to hear from you.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/replacing-manual-pipelines-with-workers">From manual script to production pipeline</a>
+            <small>2026-04-20</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a>
+            <small>2026-06-12</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/rag-in-production-is-mostly-retrieval">RAG in production is mostly retrieval, not generation</a>
+            <small>2026-05-25</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

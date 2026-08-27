@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Network telemetry is a big-data problem">
+  <meta property="og:description" content="Your video call freezes for three seconds, then recovers. Somewhere, in the network between you and the other person, something went briefly wrong. The interesting question for an engineer is: coul...">
+  <meta property="og:url" content="https://takasoft.io/blog/network-telemetry-is-a-big-data-problem">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Network telemetry is a big-data problem">
+  <meta name="twitter:description" content="Your video call freezes for three seconds, then recovers. Somewhere, in the network between you and the other person, something went briefly wrong. The interesting question for an engineer is: coul...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Network telemetry is a big-data problem - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Network telemetry is a big-data problem</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-06-12T00:00:00+00:00">
+          2026-06-12
+        </time>
+      </span>
+    </span>
+    <p>Your video call freezes for three seconds, then recovers. Somewhere, in the network between you and the other person, something went briefly wrong. The interesting question for an engineer is: <strong>could anyone actually prove what happened, after the fact?</strong> Answering that turns out to be a data problem, and a surprisingly large one. The systems that watch a network for a living generate a torrent of data about it, and handling that torrent well is the same kind of high-throughput data-infrastructure challenge I usually write about in the context of AI. This post is about why network monitoring is, underneath, a big-data problem, and why the hard parts rhyme with the hard parts of feeding data to AI.</p>
+
+<p>I am going to assume no networking background. If you have used the internet, you know enough to follow along.</p>
+
+<h3 id="what-telemetry-even-means">What “telemetry” even means</h3>
+
+<p><strong>Telemetry</strong> is just a fancy word for “measurements a system reports about itself.” A car’s dashboard is telemetry: speed, fuel, engine temperature. A network produces telemetry too, and it comes in three main flavors. The cleanest way to keep them straight is by how much detail each one carries, and how much data that detail costs you.</p>
+
+<p><strong>1. Packets.</strong> When data moves across a network, it does not travel as one continuous stream. It is chopped into small chunks called <strong>packets</strong>, and each packet carries a header that says where it came from, where it is going, and what kind of traffic it is. Watching the actual packets go by is called <strong>packet capture</strong>. It is the most detailed view possible, the equivalent of recording every byte, and also the most overwhelming.</p>
+
+<p><strong>2. Flows.</strong> Most of the time you do not need every packet. You just need to know “machine A talked to machine B, sent 4 megabytes, over five minutes, using video-call traffic.” That summary is called a <strong>flow record</strong>: one row per conversation, with the totals but not the contents. Flows are far smaller than full packet capture but still tell you most of what you want for everyday monitoring.</p>
+
+<p><strong>3. Metrics.</strong> Finally there are plain numbers sampled over time: how many packets per second crossed this link, how many had errors, how full was this queue, what was the average delay. These are <strong>metrics</strong> (sometimes called counters). Each individual number is tiny, but you collect thousands of them, every few seconds, forever.</p>
+
+<p>A useful way to see the three together is as successive summaries of the same traffic. Each step down throws away detail and, in exchange, shrinks the data dramatically.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    P["Packets&lt;br/&gt;every byte on the wire&lt;br/&gt;highest detail, highest volume"]
+    F["Flows&lt;br/&gt;one summary row per conversation&lt;br/&gt;medium detail, medium volume"]
+    M["Metrics&lt;br/&gt;counts and averages over time&lt;br/&gt;lowest detail, lowest volume"]
+    P --&gt;|"summarize each conversation"| F
+    F --&gt;|"count and average"| M
+</code></pre>
+
+<p>Logs and traces exist too, but packets, flows, and metrics are enough to make the point.</p>
+
+<h3 id="why-this-is-a-big-data-problem-and-not-a-small-one">Why this is a big-data problem and not a small one</h3>
+
+<p>Here is the part that surprises people. A single busy network link can carry tens of billions of bits per second. If you wanted to capture every packet on it, you would be writing data to disk faster than most storage systems can accept it. And a large company does not have one link. It has thousands, across data centers, offices, and cloud regions.</p>
+
+<p>So you immediately hit the defining tension of the whole field:</p>
+
+<ul>
+  <li><strong>Keep everything</strong>, and you drown. The cost of storing full packet capture for even a day across a large network is enormous, and most of it is boring traffic you will never look at.</li>
+  <li><strong>Keep a sample</strong>, and you save money, but you might throw away the one packet that explains the outage. Rare events are exactly the ones that matter, and rare events are exactly what sampling tends to miss.</li>
+</ul>
+
+<p>This is not a tooling detail you can shrug off. It is the central design decision, and every network-monitoring product is, in large part, an opinion about how to resolve it: what to keep in full, what to summarize, what to throw away, and how fast.</p>
+
+<p>If that tension sounds familiar from my other writing, it should. It is the same problem as deciding what data to retain and at what fidelity when you are building pipelines to feed an AI system. The volumes and the words differ, but the shape is identical.</p>
+
+<h3 id="it-maps-cleanly-onto-the-data-stack-you-already-know">It maps cleanly onto the data stack you already know</h3>
+
+<p>In <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai#the-layers-top-to-bottom">an earlier post on data engineering</a> I described the modern data stack as four layers: sources, storage, transformation, and serving. Network telemetry slots into exactly the same four layers. That is really the whole thesis of this post: <strong>network monitoring is a data-pipeline problem wearing a networking costume.</strong></p>
+
+<pre><code class="language-mermaid">flowchart LR
+    S[("Sources&lt;br/&gt;packets, flows, metrics")] --&gt; I["Ingestion&lt;br/&gt;(capture at line rate)"]
+    I --&gt; ST[("Storage&lt;br/&gt;time-series + retention tiers")]
+    ST --&gt; T["Transformation&lt;br/&gt;(rollups + enrichment)"]
+    T --&gt; SV["Serving&lt;br/&gt;dashboards, alerts, forensic search, AIOps"]
+</code></pre>
+
+<p>Let me walk the layers, because each one has a twist that the networking context adds.</p>
+
+<p><strong>Sources.</strong> The packets, flows, and metrics above. The twist: unlike a database you can query at your leisure, this data flies past once. If you do not capture it as it happens, it is gone. There is no “re-run yesterday.”</p>
+
+<p><strong>Ingestion.</strong> Getting the data off the wire and into a system without dropping it. This is the genuinely hard part, because the data arrives at “line rate,” meaning as fast as the network can physically move it. The monitoring system has to keep up at full speed or it starts dropping the very data it exists to collect. In ordinary data engineering you can usually slow down a source if your pipeline is behind. Here you cannot ask the network to wait.</p>
+
+<p><strong>Storage.</strong> Once captured, the data is almost always <strong>time-series</strong>, meaning every record is stamped with when it happened and you mostly ask time-based questions (“show me the last hour”). Nobody keeps the most detailed data forever. The standard move is <strong>retention tiers</strong>: keep the last few hours in full detail (expensive, fast to search), keep summaries for a few weeks (cheaper), and keep only coarse aggregates for a year (cheapest). Hot, warm, cold. Your phone’s photo storage works the same way, recent photos on the device, older ones pushed to the cloud.</p>
+
+<p><strong>Transformation.</strong> Turning raw firehose into something a human can read: rolling per-second numbers up into per-minute averages, counting flows by application, attaching context (“this address belongs to the finance department”). This is the same aggregate-and-enrich work that pipelines do everywhere, including in the tools I build around <a href="https://github.com/takasoft/floe">Floe</a>. The network flavor just runs continuously and never really finishes.</p>
+
+<p><strong>Serving.</strong> Dashboards that show red or green, alerts that page someone at 3am, and forensic search for when you need to reconstruct exactly what happened during that three-second video freeze. Increasingly, this layer also feeds machine-learning systems that try to spot trouble automatically, which I will come back to.</p>
+
+<h3 id="the-one-genuinely-networky-idea-worth-learning-cardinality">The one genuinely networky idea worth learning: cardinality</h3>
+
+<p>There is a single concept that makes telemetry harder than it looks, and it is worth understanding because it shows up everywhere once you see it. It is called <strong>cardinality</strong>, which is just a heavy word for “how many distinct things you are counting separately.”</p>
+
+<p>Counting total packets per second is cheap: it is one running number. But the moment you want to count packets per second <strong>for every pair of communicating machines, broken down by application</strong>, you are no longer keeping one number. You might be keeping millions of separate little counters, one for each unique combination. As the network grows, the number of combinations can explode far faster than the traffic itself.</p>
+
+<p>High cardinality is the silent budget killer of monitoring systems. It is the reason you cannot simply “track everything, sliced every possible way.” The slicing is what gets expensive, not the raw volume. A huge part of designing a telemetry system is deciding which breakdowns are worth keeping and which are not, which is, again, a data-modeling decision, the same kind covered in the data-engineering post.</p>
+
+<h3 id="a-sketch-of-how-you-would-actually-build-one">A sketch of how you would actually build one</h3>
+
+<p>It helps to make this concrete. Here is roughly what a telemetry system looks like sketched on a whiteboard. None of the boxes are exotic. They are the same boxes you would draw for any high-throughput data pipeline, which is exactly the point.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    subgraph capture["Capture at the edges"]
+      A["Network taps /&lt;br/&gt;mirror ports"]
+      B["Router exporters&lt;br/&gt;(NetFlow, sFlow)"]
+      C["Host agents"]
+    end
+    A --&gt; Q
+    B --&gt; Q
+    C --&gt; Q
+    Q["Buffer&lt;br/&gt;(message queue)"] --&gt; SP["Stream processor&lt;br/&gt;sample, roll up, enrich"]
+    SP --&gt; TS[("Time-series DB&lt;br/&gt;metrics + flows")]
+    SP --&gt; OBJ[("Object storage&lt;br/&gt;raw packet capture")]
+    TS --&gt; API["Query + alerting layer"]
+    OBJ --&gt; API
+    API --&gt; D["Dashboards"]
+    API --&gt; AL["Alerts / paging"]
+    API --&gt; AI["AIOps / anomaly detection"]
+</code></pre>
+
+<p>Walking it left to right, a handful of design decisions carry most of the weight:</p>
+
+<p><strong>Capture at the edges.</strong> You collect data where the traffic already is: passive <strong>taps</strong> or <strong>mirror ports</strong> that copy packets off a link, <strong>exporters</strong> built into routers that emit flow records, and <strong>agents</strong> running on individual machines. Each source gives a different detail-versus-volume tradeoff, which is why real systems use all three rather than picking one.</p>
+
+<p><strong>Put a buffer in front of everything.</strong> A message queue sits between capture and processing so that a momentary slowdown downstream does not turn into dropped packets upstream. This is the single most important move in the whole design, because, as before, the network will not wait. The buffer absorbs bursts and lets the rest of the system run at a sane average pace instead of the terrifying peak.</p>
+
+<p><strong>Process as a stream, not a batch.</strong> The sampling, the rollups (per-second into per-minute), and the enrichment (attaching “this address is the finance department”) all happen in flight, as the data flows past, not in a nightly job. This is where you make the keep-everything-versus-keep-a-sample decision real, and where you decide which cardinality breakdowns are allowed to exist.</p>
+
+<p><strong>Split storage by how you will read it.</strong> The numbers you query constantly (metrics and flows) go into a <strong>time-series database</strong> tuned for “show me the last hour.” The raw packet capture you will rarely touch but must keep briefly goes into cheap <strong>object storage</strong>. Layered on top is <strong>tiered retention</strong>: full detail for hours, summaries for weeks, coarse aggregates for a year.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    H["Hot&lt;br/&gt;last few hours&lt;br/&gt;full detail, fast, costly"] --&gt; W["Warm&lt;br/&gt;last few weeks&lt;br/&gt;summarized, cheaper"]
+    W --&gt; C["Cold&lt;br/&gt;up to a year&lt;br/&gt;coarse aggregates, cheapest"]
+</code></pre>
+
+<p><strong>Serve through one query layer.</strong> Dashboards, alerting, and any AIOps models all read from the same query layer rather than each reaching into storage directly, so there is one consistent answer to “what was happening at 2:47am.”</p>
+
+<p>If you have built a data pipeline before, none of this is new. Swap “packets” for “events” and this is a generic streaming architecture. The networking details (line-rate capture, taps, NetFlow) change the constraints, but not the shape.</p>
+
+<h3 id="garbage-in-garbage-out-for-the-systems-that-are-supposed-to-tell-the-truth">Garbage in, garbage out, for the systems that are supposed to tell the truth</h3>
+
+<p>Now the part that ties back to the thesis running through everything I write. My standing argument is that <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">data infrastructure, not the model, is the real bottleneck for AI</a>, because “garbage in, garbage out” governs any system fed by data. Network telemetry is a sharp example, with an extra sting: this is the data that is supposed to tell you whether everything else is healthy.</p>
+
+<p>Consider what “garbage in” looks like here:</p>
+
+<ul>
+  <li><strong>Dropped data.</strong> The monitoring system fell behind at line rate and silently skipped some traffic. Now your dashboard shows a dip in activity that never happened, or worse, hides a spike that did.</li>
+  <li><strong>Clock skew.</strong> Two devices disagree about what time it is by a few hundred milliseconds. When you stitch their telemetry together to reconstruct an incident, the order of events is wrong, and you chase the wrong cause.</li>
+  <li><strong>Sampling bias.</strong> You kept one packet in a thousand to save money, and the problem lived in the packets you discarded. The data says everything is fine because the evidence was thrown away before anyone looked.</li>
+  <li><strong>Truncated cardinality.</strong> To control cost, the system lumped many distinct sources into an “other” bucket, and the one misbehaving machine is now invisible inside that bucket.</li>
+</ul>
+
+<p>In every case the dashboard can glow green while users suffer. A monitoring system built on bad telemetry does not just fail to help, it actively misleads, because people trust it precisely when they are stressed and debugging. The quality of the underlying data is not a nice-to-have. It is the entire value of the system.</p>
+
+<h3 id="why-this-is-worth-caring-about">Why this is worth caring about</h3>
+
+<p>Two reasons, one practical and one bigger.</p>
+
+<p>The practical one: networks are now being watched by machine learning, not just humans. The industry calls this <strong>AIOps</strong>, the idea that models can spot anomalies and point at root causes faster than a person scrolling dashboards. It is a genuinely good idea. But it inherits the rule without exception: a model trying to detect network anomalies is only as good as the telemetry feeding it, and if that telemetry is dropped, skewed, or sampled away, the model confidently learns the wrong normal and raises the wrong alarms. The smartest anomaly detector in the world cannot detect what it was never shown.</p>
+
+<p>The bigger reason: networks are critical infrastructure. The same plumbing carries hospital records, payment systems, power-grid coordination, and government services. When it degrades, knowing precisely what happened, and proving it, is not a luxury. And that knowing is, at the bottom, a data-infrastructure capability: capture the right signals at full speed, store them affordably at the right fidelity, and keep them honest enough to trust at 3am. I spent an early part of my career on the security side of a large financial network, automating away slow manual processes, and the lesson stuck: the network is only as understandable as the data it is willing and able to tell you about itself.</p>
+
+<p>So when I say network telemetry is a big-data problem, I do not mean it as a metaphor. It is the same ingestion, the same storage tradeoffs, the same transformation work, the same quality discipline, and the same painful tension between keeping everything and affording anything that runs through all of modern data infrastructure. The packets are just a particularly fast, particularly unforgiving source. And like every other source, what you get out of the system is decided long before the dashboard, by how well you handled the data going in.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/rag-in-production-is-mostly-retrieval">RAG in production is mostly retrieval, not generation</a>
+            <small>2026-05-25</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/fairness-aware-metrics-for-gig-economy">Designing fairness-aware performance metrics for gig-economy workforces</a>
+            <small>2026-05-02</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

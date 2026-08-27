@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Designing fairness-aware performance metrics for gig-economy workforces">
+  <meta property="og:description" content="Gig-economy platforms — Uber, Lyft, DoorDash, Instacart, Amazon DSP, and many smaller ones — share a deep operational problem: they need to evaluate the performance of large numbers of independent ...">
+  <meta property="og:url" content="https://takasoft.io/blog/fairness-aware-metrics-for-gig-economy">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Designing fairness-aware performance metrics for gig-economy workforces">
+  <meta name="twitter:description" content="Gig-economy platforms — Uber, Lyft, DoorDash, Instacart, Amazon DSP, and many smaller ones — share a deep operational problem: they need to evaluate the performance of large numbers of independent ...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Designing fairness-aware performance metrics for gig-economy workforces - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Designing fairness-aware performance metrics for gig-economy workforces</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-05-02T00:00:00+00:00">
+          2026-05-02
+        </time>
+      </span>
+    </span>
+    <p>Gig-economy platforms — Uber, Lyft, DoorDash, Instacart, Amazon DSP, and many smaller ones — share a deep operational problem: they need to evaluate the performance of large numbers of independent workers using objective data, but the data is full of factors the worker cannot control.</p>
+
+<p>A delivery is late. Was it the driver’s fault? Or was it the weather? Or was traffic gridlocked? Or did the dispatch system route them through an impossible path? Or was the address itself wrong because the customer mistyped it?</p>
+
+<p>If your performance metric counts every late delivery against the driver, you punish drivers for things they did not cause. Trust evaporates. Drivers leave the platform. The data signal becomes meaningless because everyone learns to game whatever they can control.</p>
+
+<p>If your metric does not count any of these events, you give up the ability to enforce baseline professional behavior. People who genuinely fail to do their jobs are indistinguishable from people who are blameless.</p>
+
+<p>The interesting engineering problem in the middle is: <strong>how do you build a performance metric that holds workers accountable for what they can actually control, and only that?</strong></p>
+
+<p>I spent two years at Amazon working on exactly this problem in the context of last-mile delivery, and the conclusions generalize far beyond any single company. Here is the mental model I now use when thinking about fairness in performance metrics.</p>
+
+<h3 id="step-1-make-the-controllable--uncontrollable-distinction-explicit">Step 1: Make the controllable / uncontrollable distinction explicit</h3>
+
+<p>The first move sounds obvious but is often skipped: write down every category of “defect” or “negative event” your platform can record, and explicitly label each one as driver-controllable or not.</p>
+
+<p>For a delivery defect, the categories might look like:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Defect type</th>
+      <th>Controllable?</th>
+      <th>Reasoning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Driver did not attempt delivery during window</td>
+      <td>Yes</td>
+      <td>Driver chose not to attempt</td>
+    </tr>
+    <tr>
+      <td>Driver delivered to wrong address</td>
+      <td>Yes</td>
+      <td>Driver did not check</td>
+    </tr>
+    <tr>
+      <td>Driver did not follow delivery instructions</td>
+      <td>Yes</td>
+      <td>Driver chose not to follow</td>
+    </tr>
+    <tr>
+      <td>Address not found because customer entered wrong address</td>
+      <td>No</td>
+      <td>Customer / data error</td>
+    </tr>
+    <tr>
+      <td>Severe weather prevented safe delivery</td>
+      <td>No</td>
+      <td>Environmental</td>
+    </tr>
+    <tr>
+      <td>Traffic incident on route</td>
+      <td>No</td>
+      <td>Environmental</td>
+    </tr>
+    <tr>
+      <td>Dispatch system error caused incorrect routing</td>
+      <td>No</td>
+      <td>Platform error</td>
+    </tr>
+    <tr>
+      <td>Customer not available and refused alternate delivery</td>
+      <td>No</td>
+      <td>Customer behavior</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This table is the foundation of everything else. Without it, every conversation about fairness becomes opinion. With it, the discussion shifts from “is this fair” to “is each row labeled correctly,” which is a tractable, verifiable engineering question.</p>
+
+<h3 id="step-2-attribute-causality-to-events-using-multi-source-data">Step 2: Attribute causality to events using multi-source data</h3>
+
+<p>Once you have the categories, the harder problem is: for any given delivery defect, what category was it actually in?</p>
+
+<p>This is fundamentally a causality attribution problem. It requires combining data sources that none of the individual components were designed to combine:</p>
+
+<ul>
+  <li><strong>The delivery record itself</strong> (timestamps, GPS trace, status updates)</li>
+  <li><strong>Weather data</strong> (was there severe weather at the delivery location at the relevant time?)</li>
+  <li><strong>Traffic data</strong> (was there a known incident on the planned route?)</li>
+  <li><strong>System logs</strong> (did our routing system output something nonsensical?)</li>
+  <li><strong>Address validation data</strong> (does the address geocode to a real location?)</li>
+  <li><strong>Customer behavior signals</strong> (did the customer respond to delivery attempts?)</li>
+</ul>
+
+<p>Each individual data source is messy, has gaps, and arrives with its own latency. Joining them at the per-event level is an industrial-scale data engineering problem before it is a fairness problem. You are processing tens or hundreds of terabytes a day, joining heterogeneous sources, and producing one classification per delivery event.</p>
+
+<p>This is why fairness is, at its core, a data infrastructure problem. The conceptual classification logic is something a small team can write down. The infrastructure to actually compute it correctly at scale, day in and day out, with all the edge cases, is the actual work.</p>
+
+<h3 id="step-3-decide-your-default">Step 3: Decide your default</h3>
+
+<p>A subtle but important question: when the data is ambiguous, do you default to “controllable” or “uncontrollable”?</p>
+
+<p>There are good arguments both ways. Defaulting to “uncontrollable” means you let some real driver-fault defects slip through, which can erode platform integrity. Defaulting to “controllable” means you punish workers for ambiguous events, which is exactly the unfairness you are trying to avoid.</p>
+
+<p>My view: <strong>default to uncontrollable when data is ambiguous, and invest engineering effort over time in reducing ambiguity.</strong> A metric that occasionally lets a real defect slip through but never punishes blameless workers is more trusted by the workforce than the inverse. Trust compounds. Erosion of trust compounds faster.</p>
+
+<h3 id="step-4-make-the-categorization-auditable">Step 4: Make the categorization auditable</h3>
+
+<p>Workers need to know why a specific defect counted against them, or why it did not. This is partly a fairness requirement and partly a debugging requirement: when the classification is wrong, you need to be able to fix it.</p>
+
+<p>In practice this means logging, for every defect event:</p>
+<ul>
+  <li>The classification result</li>
+  <li>Which signals contributed to that classification</li>
+  <li>The version of the classification logic that was applied</li>
+</ul>
+
+<p>A worker who appeals a defect should be able to see “this defect was classified as controllable because GPS showed you stopped 200 meters from the delivery address for 30 seconds and then drove away without attempting delivery.” That is a debuggable claim. “Our model says it was your fault” is not.</p>
+
+<h3 id="step-5-iterate-the-classification-logic-continuously">Step 5: Iterate the classification logic continuously</h3>
+
+<p>You will not get the categories right on day one. New defect types appear. Edge cases accumulate. The data gets better as upstream systems improve. Workers find legitimate gaps in your logic and surface them through appeals.</p>
+
+<p>The classification rules need to be a living artifact. The platform needs to invest in:</p>
+
+<ul>
+  <li>A feedback loop where appeal outcomes feed back into the classification logic</li>
+  <li>Regular review by a cross-functional team (engineering, operations, workforce ops, sometimes legal)</li>
+  <li>Versioning so that you can replay old events with the new logic to assess impact</li>
+  <li>Stat-based monitoring to detect when classification distributions drift unexpectedly</li>
+</ul>
+
+<p>This is not glamorous AI work. It is metric engineering. But it is what makes the difference between a platform whose workforce trusts the system and one where they do not.</p>
+
+<h3 id="step-6-build-the-coaching-dashboard">Step 6: Build the coaching dashboard</h3>
+
+<p>The classification system tells you that a driver had N controllable defects last week. Knowing the number is not the same as being able to act on it. To actually improve performance, operations needs a per-defect coaching dashboard — a view a manager can sit down and walk through with the driver, one event at a time.</p>
+
+<p>For each defect, the dashboard should show:</p>
+
+<ul>
+  <li><strong>Where the delivery was going.</strong> The address, the customer-provided delivery instructions, and any prior notes for that address.</li>
+  <li><strong>Where the driver actually went.</strong> The planned route, the actual GPS trace, and how the actual stop locations compare to the delivery address.</li>
+  <li><strong>What the driver did at the stop.</strong> Time on site, whether they attempted delivery, whether they followed the instructions, photos or scans captured, customer responsiveness signals.</li>
+  <li><strong>Why the defect was raised in the first place.</strong> Which signals triggered the classification, what threshold was crossed, and the version of the logic applied.</li>
+</ul>
+
+<p>This overlaps with the auditability data in Step 4, but the audience is different: Step 4 is the worker’s view of their own defects, used for appeals. Step 6 is the operations view, used to have a productive conversation. A driver who sees “your GPS shows you stopped two blocks from the address for 30 seconds and never approached the door” can talk about what happened. A driver who hears “you got dinged” cannot.</p>
+
+<p>Without this layer, the fairness work in steps 1–5 is academic. The metric is fair, but the workforce experience stays opaque, and there is no mechanism for the platform to actually help workers improve.</p>
+
+<h3 id="why-this-generalizes-beyond-delivery">Why this generalizes beyond delivery</h3>
+
+<p>The same problem shape applies to any platform that uses data to evaluate humans:</p>
+
+<ul>
+  <li><strong>Rideshare</strong> (Uber, Lyft): driver ratings, cancellations, pickup times — all confounded by traffic, weather, customer behavior, surge events</li>
+  <li><strong>Food delivery</strong> (DoorDash, Instacart): order accuracy, delivery time — confounded by restaurant prep time, customer instructions</li>
+  <li><strong>Customer service</strong> (call centers, gig support): handle time, resolution rate — confounded by ticket complexity, system outages</li>
+  <li><strong>Sales platforms</strong>: deal close rate, response time — confounded by lead quality, market conditions</li>
+  <li><strong>Online education</strong>: student outcomes — confounded by socioeconomic factors and prior knowledge</li>
+</ul>
+
+<p>In each of these, the same anti-pattern shows up: a “simple” metric that measures something measurable, without controlling for the factors outside the worker’s control. And the same fix applies: explicit controllable / uncontrollable categorization, multi-source causality attribution, ambiguity-favors-the-worker defaults, auditability, iteration, and coaching surfaces that translate the metric into per-event conversations.</p>
+
+<h3 id="closing-thought">Closing thought</h3>
+
+<p>There is a common framing that “AI” or “ML models” will solve fairness problems in workforce evaluation. I disagree. Models can help with the causality attribution step — for example, by combining noisy signals to produce a probabilistic classification. But the core engineering problem is not modeling. It is the data infrastructure to feed the classification with timely, multi-source, ground-truth data; the rules to translate raw classifications into accountable decisions; and the auditability and iteration that maintain trust with the workforce over time.</p>
+
+<p>Fairness in performance metrics is, fundamentally, an infrastructure and process problem. It is not a model problem. The platforms that get this right will have lower workforce churn, higher service quality, and a more defensible position when scrutinized by regulators or workers’ advocates. The ones that do not will continue to have unhappy workforces and unstable metrics, regardless of how sophisticated their downstream AI is.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a>
+            <small>2026-06-12</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/rag-in-production-is-mostly-retrieval">RAG in production is mostly retrieval, not generation</a>
+            <small>2026-05-25</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

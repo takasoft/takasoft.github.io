@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="How HTTPS actually works, from a typed name to an encrypted connection">
+  <meta property="og:description" content="You type a hostname into a browser, the little lock icon (the padlock) appears in the address bar, and a page loads. It feels like one thing. It is really a short, ordered sequence of independent s...">
+  <meta property="og:url" content="https://takasoft.io/blog/how-https-actually-works">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="How HTTPS actually works, from a typed name to an encrypted connection">
+  <meta name="twitter:description" content="You type a hostname into a browser, the little lock icon (the padlock) appears in the address bar, and a page loads. It feels like one thing. It is really a short, ordered sequence of independent s...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      How HTTPS actually works, from a typed name to an encrypted connection - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">How HTTPS actually works, from a typed name to an encrypted connection</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-06-17T00:00:00+00:00">
+          2026-06-17
+        </time>
+      </span>
+    </span>
+    <p>You type a hostname into a browser, the little lock icon (the padlock) appears in the address bar, and a page loads. It feels like one thing. It is really a short, ordered sequence of independent systems, each of which has to be correct, and each of which fails in its own recognizable way.</p>
+
+<p>This post explains HTTPS at two levels, easy first. The first half is the <strong>operational view</strong>: the three systems that have to line up for an endpoint to serve a request, and the distinct failure signature of each. That is the practical, 2am-debugging model, and for a lot of people it is all they need. The second half goes <strong>under the hood</strong> into what actually happens on the wire: recursive DNS, the TLS handshake, and how a certificate is really validated. If you only want the debugging model, stop after Part 1. If you want the protocol, skip ahead to <a href="#part-2-under-the-hood">Part 2</a>.</p>
+
+<p>I spend a lot of my time at exactly this layer (domain resolution, certificate issuance, and TLS termination on a large multi-region platform), and the whole thing is far less mysterious than it looks once you watch it run in order. No networking background assumed: if you have ever typed a URL, you know enough.</p>
+
+<h2 id="part-1-the-operational-view">Part 1: the operational view</h2>
+
+<p>For <code class="language-plaintext highlighter-rouge">https://app.example.com</code> to actually serve a request, three independent things must all be true at once:</p>
+
+<ol>
+  <li><strong>DNS resolves.</strong> The name <code class="language-plaintext highlighter-rouge">app.example.com</code> has to translate into an address your client can connect to.</li>
+  <li><strong>A certificate covers the host.</strong> Whatever terminates the encrypted connection has to present a TLS certificate whose list of valid names includes <code class="language-plaintext highlighter-rouge">app.example.com</code>.</li>
+  <li><strong>A route matches the host.</strong> Once the connection lands on a gateway, something has to look at which hostname was requested and send it to the right backend.</li>
+</ol>
+
+<pre><code class="language-mermaid">flowchart LR
+    C["Client"] --&gt;|"1. resolve name"| D[("DNS")]
+    D --&gt;|"address"| C
+    C --&gt;|"2. TLS handshake"| G["Gateway"]
+    G -.-&gt;|"cert SAN must&lt;br/&gt;cover the host"| G
+    G --&gt;|"3. match Host header"| B[("Backend service")]
+</code></pre>
+
+<p>Three systems, usually owned by three different teams, often in three different tools. The reason production debugging is hard is that the symptom (“I cannot reach the site”) is identical no matter which of the three broke. The skill is reading the <em>distinct</em> failure signature of each.</p>
+
+<h3 id="ingredient-1-dns-that-resolves">Ingredient 1: DNS that resolves</h3>
+
+<p>DNS is the phone book that turns a name into an address. In production it is rarely a single lookup. A name like <code class="language-plaintext highlighter-rouge">app.example.com</code> is often a <strong>CNAME</strong> (an alias) that points at another name, which points at another, until you finally reach a terminal <strong>A</strong> or <strong>AAAA</strong> record holding an actual IP address. Each hop has a <strong>TTL</strong>, a cache lifetime, which is why DNS changes are not instant: the old answer lives in resolvers around the world until its TTL expires.</p>
+
+<p>The failure signature is specific and recognizable: the connection never even starts. You get “server not found” or a hang before any handshake. Crucially, load balancers and traffic directors constantly run <strong>health checks</strong>: small probes that mark each target <em>healthy</em> (it responds correctly) or <em>unhealthy</em> (it is down, erroring, or unreachable), so traffic is only sent to the healthy ones. If one of those checks reaches a target <em>by name</em> and that name has no DNS record yet, the target looks unhealthy for a reason that has nothing to do with the service itself. It is simply unresolvable. I have watched a perfectly healthy fleet of endpoints report as degraded purely because their names had not been published in DNS yet. The service was fine. The phone book did not have its number.</p>
+
+<p>A detail that bites people: the same name can resolve to different addresses depending on <em>where you ask</em>, a setup called split-horizon DNS, where an internal resolver and a public resolver give different answers for the same hostname. So “it resolves for me” is not the same as “it resolves,” and the first question in a DNS incident is always “resolves from where?”</p>
+
+<h3 id="ingredient-2-a-certificate-whose-names-cover-the-host">Ingredient 2: a certificate whose names cover the host</h3>
+
+<p>When the encrypted connection is established, the server presents a TLS certificate, and the client checks one thing above all: does this certificate actually claim to be valid for the hostname I asked for? That claim lives in a field called the <strong>SAN</strong> (Subject Alternative Name), a list of hostnames the certificate is good for. If <code class="language-plaintext highlighter-rouge">app.example.com</code> is not in the SAN list, the browser refuses the connection and shows a scary warning, no matter how healthy everything behind it is.</p>
+
+<p>The failure signature is the opposite of the DNS one: the connection <em>starts</em>, then is rejected at the handshake with a certificate error. That alone tells you DNS worked (you reached something) but the certificate is wrong or missing for this host.</p>
+
+<p>One detail here is responsible for an enormous share of real-world certificate incidents. <strong>Wildcards cover exactly one level.</strong> A wildcard certificate for <code class="language-plaintext highlighter-rouge">*.example.com</code> covers <code class="language-plaintext highlighter-rouge">app.example.com</code> and <code class="language-plaintext highlighter-rouge">api.example.com</code>, but it does <strong>not</strong> cover the apex <code class="language-plaintext highlighter-rouge">example.com</code> itself, and it does <strong>not</strong> cover <code class="language-plaintext highlighter-rouge">app.internal.example.com</code> (that is two levels deep). The wildcard is one label to the left of the part you wrote, no more. Naming schemes have to be designed around this limit, not discovered to violate it in production. (There is a second, deeper certificate trap, “internal does not mean private,” that I save for Part 2 because it is really about how the trust chain works.)</p>
+
+<h3 id="ingredient-3-a-gateway-route-that-matches-the-host">Ingredient 3: a gateway route that matches the host</h3>
+
+<p>Now the connection has landed on a gateway with a valid certificate. The gateway is typically serving <em>many</em> hostnames from the same IP address, so it has to decide where this particular request goes. It uses two pieces of the request to do that. During the TLS handshake, <strong>SNI</strong> (Server Name Indication) tells the gateway which hostname the client is asking for, so the gateway can select the right certificate before encryption is even established. Then, inside the request, the <strong>Host header</strong> says the same name again, and the gateway matches it to a route pointing at a backend.</p>
+
+<p>The failure signature is different again: DNS resolved, the certificate was accepted, the connection is fully established, and then you get an error <em>from the gateway itself</em>, a 404 or a 502 or a default landing page, because no route matched this host. This is the “everything works except it goes nowhere” failure, and it is the one people misdiagnose most, because the padlock is green and the connection is real. The problem is purely that the last hop has no instruction for this name.</p>
+
+<h3 id="the-diagnostic-shortcut">The diagnostic shortcut</h3>
+
+<p>Once you internalize the three signatures, you can localize most “site is down” reports in seconds, before opening a single dashboard:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>What you observe</th>
+      <th>Which ingredient failed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Name does not resolve; connection never starts</td>
+      <td>DNS</td>
+    </tr>
+    <tr>
+      <td>Connection starts, then a certificate warning</td>
+      <td>Certificate / SAN</td>
+    </tr>
+    <tr>
+      <td>Connection completes, padlock is fine, but you get a 404/502 from the edge</td>
+      <td>Gateway route</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Three systems, three owners, three tools, three signatures. The reason this framing is worth carrying around is that it converts a vague, stressful “it is broken” into a precise, almost mechanical question: which of the three, and the evidence is already in the error.</p>
+
+<h3 id="why-global-scale-makes-this-sharper-not-fuzzier">Why global scale makes this sharper, not fuzzier</h3>
+
+<p>In a multi-region platform, the same hostname is served from many places, and a <strong>DNS-level traffic director</strong> (think a global load balancer like Azure Traffic Manager or latency-based routing in AWS Route 53) decides which region a given client is sent to. The important and frequently-missed detail is that this director works <em>at the DNS layer</em>. It answers the name lookup with the address of a healthy nearby region, and then it steps out of the way. It is not in the request path. The split is clean: the traffic director picks <em>which region</em> and runs only once, at name-lookup time; the regional gateway then picks <em>which backend</em> and runs on every single request.</p>
+
+<p>That single fact has a big operational consequence: you cannot read per-request logs at the traffic director, because requests never flow through it. It emits health-probe and traffic-distribution signals, but the actual request logs live at the regional gateway, keyed by hostname. People burn hours looking for request data at the global layer that was never there to find. Knowing exactly where each signal lives, resolution at DNS, request logs at the gateway, certificate state at the binding, is the difference between a five-minute diagnosis and a five-hour one.</p>
+
+<p>This connects directly to something I have <a href="/blog/network-telemetry-is-a-big-data-problem">written about before</a>: a system is only as debuggable as the telemetry it is willing and able to tell you about itself. The three-ingredient model is useful precisely because each ingredient emits its own kind of evidence, and good infrastructure makes that evidence easy to read at the layer where it actually exists.</p>
+
+<h2 id="part-2-under-the-hood">Part 2: under the hood</h2>
+
+<p>The operational view treats each system as a box. This half opens the boxes and walks the actual protocol, in the order it runs, in the second or so between pressing Enter and seeing the padlock.</p>
+
+<h3 id="the-whole-sequence-in-one-breath">The whole sequence in one breath</h3>
+
+<p>When you load <code class="language-plaintext highlighter-rouge">https://app.example.com</code>, four things happen in strict order:</p>
+
+<ol>
+  <li><strong>Resolve the name</strong> to an IP address (DNS).</li>
+  <li><strong>Open a transport connection</strong> to that address (TCP).</li>
+  <li><strong>Negotiate encryption and verify identity</strong> (the TLS handshake).</li>
+  <li><strong>Send the actual request</strong> over the now-encrypted channel (HTTP).</li>
+</ol>
+
+<p>Steps 1 and 3 are where almost all of the interesting machinery lives.</p>
+
+<h3 id="step-1-resolving-the-name">Step 1: resolving the name</h3>
+
+<p>Your machine does not know where <code class="language-plaintext highlighter-rouge">app.example.com</code> lives, and it does not ask one server that magically knows. It asks a <strong>recursive resolver</strong> (usually run by your ISP or a public one like <code class="language-plaintext highlighter-rouge">1.1.1.1</code>), and that resolver walks a hierarchy on your behalf:</p>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant C as Your machine
+    participant R as Recursive resolver
+    participant Root as Root servers
+    participant TLD as .com servers
+    participant Auth as example.com authoritative
+    C-&gt;&gt;R: where is app.example.com?
+    R-&gt;&gt;Root: who handles .com?
+    Root--&gt;&gt;R: ask the .com servers
+    R-&gt;&gt;TLD: who handles example.com?
+    TLD--&gt;&gt;R: ask example.com authoritative
+    R-&gt;&gt;Auth: where is app.example.com?
+    Auth--&gt;&gt;R: CNAME or A record
+    R--&gt;&gt;C: final IP address
+</code></pre>
+
+<p>This is the same DNS from Part 1, seen from the inside. The CNAME chain, the TTL caching, and split-horizon resolution all live in this walk. The global traffic director from Part 1 plugs in right here: it is the authoritative answer at the bottom, handing back the address of a healthy nearby region and then stepping out of the request path entirely. If this step fails, the connection never even starts, because there is nothing to connect <em>to</em> yet.</p>
+
+<h3 id="step-2-opening-the-connection">Step 2: opening the connection</h3>
+
+<p>Now your machine has an IP address, but a bare address is just a destination, not a live conversation. Before any HTTPS can happen, the two machines have to confirm they are both present and ready to exchange a reliable, ordered stream of bytes. That job belongs to <strong>TCP</strong> (Transmission Control Protocol), the layer that turns a raw IP address into a dependable two-way pipe where bytes arrive in order and nothing is silently dropped.</p>
+
+<p>Opening that pipe is the <strong>three-way handshake</strong>: three short messages that get both sides in sync before any real data flows.</p>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant C as Client
+    participant S as Server (port 443)
+    C-&gt;&gt;S: SYN (I want to talk, here is my starting sequence number)
+    S-&gt;&gt;C: SYN-ACK (I am here, and I acknowledge yours)
+    C-&gt;&gt;S: ACK (acknowledged, we are connected)
+    Note over C,S: reliable byte pipe is now open (still unencrypted)
+</code></pre>
+
+<p>For HTTPS this connection is made to <strong>port 443</strong>, the standard port reserved for it (plain, unencrypted HTTP uses port 80). A port is just a numbered door on the server: one IP address can run many services at once, and the port number says which one you are knocking on.</p>
+
+<p>When the handshake completes you have a reliable byte pipe to <em>some</em> server, but two things are still not true. Nothing is encrypted yet, and you have no proof that the machine on the other end is really <code class="language-plaintext highlighter-rouge">app.example.com</code> rather than an impostor that happens to sit at that address. Those are exactly the problems the TLS handshake solves next.</p>
+
+<p>This step has its own recognizable failure signature, and it is distinct from a DNS failure. The name already resolved, so you have an address; it is the connection itself that fails. You see a <strong>connection timeout</strong> (the SYN went out and nothing came back, usually a firewall, security group, or network rule silently dropping the packet) or <strong>connection refused</strong> (something answered, but nothing is listening on port 443, often the wrong port or a service that is down). The “resolves but will not connect” symptom points here, one layer below the certificate and routing problems.</p>
+
+<h3 id="step-3-the-tls-handshake">Step 3: the TLS handshake</h3>
+
+<p>This is the heart of HTTPS, and the part people find most mysterious. It does two jobs at once: it <strong>proves the server’s identity</strong> and it <strong>agrees on a secret key</strong> that only the two of you know. Here is the modern (TLS 1.3) version, simplified to the parts worth understanding:</p>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C-&gt;&gt;S: ClientHello (SNI: app.example.com,&lt;br/&gt;supported ciphers, key share)
+    S-&gt;&gt;C: ServerHello (chosen cipher, key share)
+    S-&gt;&gt;C: Certificate (server's cert + chain)
+    S-&gt;&gt;C: Finished (signed, proves it holds the key)
+    Note over C,S: both sides derive the same&lt;br/&gt;symmetric session key
+    C-&gt;&gt;S: Finished (encrypted)
+    Note over C,S: application data now flows encrypted
+</code></pre>
+
+<p>Two things in the very first message do a lot of work:</p>
+
+<ul>
+  <li><strong>SNI (Server Name Indication)</strong> is the client announcing, in the clear, which hostname it wants. This is the same SNI from Part 1’s ingredient 3: a single IP and gateway typically serve many hostnames, so the server needs this <em>before</em> it can even pick which certificate to present. SNI is how it chooses.</li>
+  <li>The <strong>key share</strong> is the client’s half of an ephemeral key exchange (Diffie-Hellman). The server sends back its half. Through a small piece of math, each side independently arrives at the <em>same</em> shared secret without that secret ever crossing the wire. An eavesdropper who recorded every byte still cannot reconstruct it. This is also why capturing the traffic later, even with the server’s private key, does not retroactively decrypt it: the session key was ephemeral and never transmitted.</li>
+</ul>
+
+<p>Notice the elegant split. The expensive public-key cryptography (the certificate, the signatures) is used only to <strong>bootstrap</strong>: prove identity and safely establish a shared secret. Once that is done, all the actual data uses fast <strong>symmetric</strong> encryption with that shared key. Asymmetric to start, symmetric to run.</p>
+
+<h3 id="step-4-validating-the-certificate-the-chain-of-trust">Step 4: validating the certificate, the chain of trust</h3>
+
+<p>The server handed over a certificate during the handshake. Why should the client believe it? Because the certificate is <strong>signed</strong> by someone the client already trusts, and that trust forms a chain.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    Root["Root CA&lt;br/&gt;(in the OS/browser trust store)"] --&gt;|signs| Inter["Intermediate CA"]
+    Inter --&gt;|signs| Leaf["Leaf certificate&lt;br/&gt;for app.example.com"]
+    Leaf -.-&gt;|presented during handshake| Client["Client validates upward"]
+</code></pre>
+
+<p>The client validates the leaf certificate by walking <em>up</em> this chain:</p>
+
+<ol>
+  <li><strong>Does a trusted root sign it (transitively)?</strong> The leaf was signed by an intermediate CA, which was signed by a root CA. The client checks each signature in turn until it reaches a root that is already in its <strong>trust store</strong>, the set of root certificates shipped with the OS or browser. If the chain does not terminate at a trusted root, validation fails.</li>
+  <li><strong>Does the name match?</strong> The hostname you asked for (<code class="language-plaintext highlighter-rouge">app.example.com</code>) must appear in the certificate’s <strong>SAN</strong> list, the same SAN field from Part 1. A certificate for the wrong name is rejected even if it is perfectly valid otherwise.</li>
+  <li><strong>Is it currently valid?</strong> Not expired, not yet revoked.</li>
+</ol>
+
+<p>This chain is the source of the deeper certificate trap I deferred from Part 1: <strong>internal does not mean private</strong>. People assume an internal-only endpoint can present a privately-issued certificate. It cannot, not if a normal client validates it, because the client’s trust store contains only <em>public</em> roots. A private CA has exactly one correct job: backend service-to-service authentication where both ends are deliberately configured to trust that private CA. The instant a browser or a standard client is on one end, you need a publicly-trusted issuer, internal hostname or not. Picking the wrong issuer for an internal gateway is a classic way to ship something that works in testing and fails the moment a real client connects.</p>
+
+<p>It also pays to keep three PKI steps separate in your head, because conflating them produces baffling failures: <strong>authorizing</strong> a domain (allow-listing who may issue certificates for it), <strong>issuing</strong> the certificate, and <strong>binding</strong> it at the gateway. Under-scope the authorization and issuance silently fails upstream of everything else, and nothing downstream explains why. This is the machinery behind Part 1’s “certificate / SAN” failure signature.</p>
+
+<p>One last thing worth being precise about, because it trips up almost everyone: what the padlock proves and what it does not. A valid certificate proves two things, that the connection is encrypted and that the server genuinely controls the exact hostname in the address bar. It does <strong>not</strong> prove that hostname is the one you meant to visit. Certificate authorities only check domain control, so an attacker who registers a lookalike like <code class="language-plaintext highlighter-rouge">paypa1.com</code> (digit one) or a Unicode near-twin legitimately owns that domain, can get a perfectly valid certificate for it, and will show a real green padlock. The browser’s built-in check confirms “this certificate is valid for <em>this</em> name,” not “this name is who you think it is.” Defenses against that are a different layer: browsers display suspicious Unicode as punycode and flag known-malicious sites through reputation services like Safe Browsing, but a brand-new typosquat with a valid certificate still gets its padlock. Encryption and identity-of-the-name are solved; is-this-the-right-name is on you.</p>
+
+<h3 id="step-5-the-request-finally-goes-out">Step 5: the request finally goes out</h3>
+
+<p>Only now, after the name resolved, the connection opened, the handshake completed, and the certificate validated, does your actual <code class="language-plaintext highlighter-rouge">GET</code> request travel down the encrypted channel, where Part 1’s third ingredient (the gateway matching the Host header to a route) finally runs. Everything that felt like a single instant was really this ordered pipeline. The padlock is just shorthand for “all of the above succeeded.”</p>
+
+<h2 id="the-takeaway">The takeaway</h2>
+
+<p>An HTTPS endpoint looks like one thing and is really a short, ordered sequence: a name that resolves, a connection that opens, a handshake that proves identity and agrees on a key, a certificate that chains to a trusted root, and a route that knows where the name goes. They are independent, they are usually owned by different teams, and they fail in distinct, recognizable ways. Most production “it is down” incidents stop being mysterious the moment you ask the only question that matters first: which step broke, and the answer is almost always sitting in the exact shape of the error.</p>
+
+<p>That is the same theme that runs through what I write about <a href="/blog/network-telemetry-is-a-big-data-problem">telemetry</a>, <a href="/blog/what-five-nines-actually-asks-of-you">infrastructure reliability</a>, and <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">data and AI infrastructure</a>: systems get debuggable when you understand exactly where each responsibility and each piece of evidence actually lives. HTTPS looks like one opaque padlock, but it is a sequence of clean trust boundaries, and once you can see them separately, a whole category of scary outages turns into a short, calm checklist.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/designing-a-rate-limiter">System design interview: design a rate limiter</a>
+            <small>2026-07-11</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a>
+            <small>2026-06-12</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/rag-in-production-is-mostly-retrieval">RAG in production is mostly retrieval, not generation</a>
+            <small>2026-05-25</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

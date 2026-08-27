@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="System design interview: design a rate limiter">
+  <meta property="og:description" content="First in a series that works through classic system design interview questions the way I actually run them, on both sides of the table. Every post follows the same six beats: clarify, estimate, def...">
+  <meta property="og:url" content="https://takasoft.io/blog/designing-a-rate-limiter">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="System design interview: design a rate limiter">
+  <meta name="twitter:description" content="First in a series that works through classic system design interview questions the way I actually run them, on both sides of the table. Every post follows the same six beats: clarify, estimate, def...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      System design interview: design a rate limiter - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">System design interview: design a rate limiter</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-07-11T00:00:00+00:00">
+          2026-07-11
+        </time>
+      </span>
+    </span>
+    <p>First in a series that works through classic system design interview questions the way I actually run them, on both sides of the table. Every post follows the same six beats: <strong>clarify, estimate, define the API, sketch the design, dive into the hard part, and break it.</strong> The rate limiter is the perfect opener because it looks trivial and is not.</p>
+
+<p>The job, in one line: <em>has this client made too many requests recently, and should this one be rejected?</em> The naive answer (“keep a counter”) is right in spirit and wrong in every detail once you have more than one server.</p>
+
+<h3 id="step-1-clarify-before-drawing-a-box">Step 1: clarify before drawing a box</h3>
+
+<p>A good candidate refuses to start designing. The questions, and the answers I will assume:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Question</th>
+      <th>Assumption</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Where does it run?</td>
+      <td><strong>Server-side</strong>, at the API gateway (client-side is a courtesy hostile clients ignore)</td>
+    </tr>
+    <tr>
+      <td>Limit on what?</td>
+      <td>A <strong>flexible key</strong>: API key, or IP for unauthenticated traffic</td>
+    </tr>
+    <tr>
+      <td>One limit or many?</td>
+      <td><strong>Named rules</strong>: e.g. 10/s writes, 1000/min reads, a daily cap</td>
+    </tr>
+    <tr>
+      <td>How strict?</td>
+      <td><strong>Load protection</strong>, not a hard boundary. Approximately right is fine. This one answer unlocks everything later.</td>
+    </tr>
+    <tr>
+      <td>What scale?</td>
+      <td>~<strong>1M requests/sec</strong>, tens of millions of keys</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Functional requirement is tiny: given a key and rule, return allow/deny plus a retry hint. The non-functional requirements are the whole problem:</p>
+
+<ul>
+  <li><strong>Low latency</strong> (single-digit ms, ideally sub-ms): it sits in <em>every</em> request path.</li>
+  <li><strong>High availability</strong>: it must not take the platform down with it.</li>
+  <li><strong>Accuracy, but only as much as we agreed we need.</strong></li>
+</ul>
+
+<h3 id="step-2-back-of-envelope-picks-the-architecture">Step 2: back-of-envelope picks the architecture</h3>
+
+<pre><code class="language-mermaid">flowchart LR
+    A[1M req/s] --&gt; B[1M counter ops/s]
+    C[20M keys x ~20 bytes] --&gt; D[few GB hot state]
+    D --&gt; E[fits in memory&lt;br/&gt;= Redis, not a DB]
+    style E stroke:#2e7d32,stroke-width:3px
+</code></pre>
+
+<p>The latency gap is the tension the rest of the design fights:</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    L[Local hashmap&lt;br/&gt;~10s of ns] -.4 orders of magnitude.-&gt; R[Shared Redis&lt;br/&gt;~0.2-1 ms]
+    style L stroke:#2e7d32,stroke-width:2px
+    style R stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<h3 id="step-3-the-api-and-the-response">Step 3: the API and the response</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>allow(key, rule) -&gt; { allowed, limit, remaining, retry_after }
+</code></pre></div></div>
+
+<p>Those fields become headers a well-behaved client backs off on:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 0
+Retry-After: 12
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">Retry-After</code> is load-bearing, not decoration: it turns a rejection into a signal instead of an immediate retry.</p>
+
+<h3 id="step-4-high-level-design">Step 4: high-level design</h3>
+
+<p>Interesting designs have boring diagrams and interesting deep dives.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    C[Client] --&gt; GW[API gateway&lt;br/&gt;rate-limit middleware]
+    GW --&gt;|allow?| RL[Limiter logic]
+    RL --&gt;|read/write| STORE[(In-memory store)]
+    RL --&gt;|allowed| SVC[Backend]
+    RL --&gt;|denied 429| C
+    CFG[(Rule config)] -.-&gt; RL
+    style STORE stroke:#c62828,stroke-width:3px
+</code></pre>
+
+<p>Two hard questions: <em>which algorithm runs in the limiter</em>, and <em>how does the count stay correct across a hundred gateways.</em> Steps 5 and 6.</p>
+
+<h3 id="step-5-the-algorithms">Step 5: the algorithms</h3>
+
+<p><strong>Fixed window.</strong> One counter per key per bucket. Simple, but the reset is a cliff: a client sends the full limit either side of the boundary and lands <strong>2x the limit</strong> in a two-second span.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    subgraph W1[minute 1]
+      direction LR
+      A[quiet...] --&gt; B[1000 reqs&lt;br/&gt;last second]
+    end
+    subgraph W2[minute 2]
+      direction LR
+      D[1000 reqs&lt;br/&gt;first second] --&gt; E[quiet...]
+    end
+    B --&gt; D
+    B -.2000 reqs in ~2s.-&gt; D
+    style B stroke:#c62828,stroke-width:2px
+    style D stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p><strong>Sliding window log.</strong> Store a timestamp per request; on each new request drop the timestamps older than the window, count what remains, and allow only if it is under the limit. The window is a true 60-second span that slides with every request, so there is no boundary cliff at all.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    OLD["t=3s&lt;br/&gt;(now expired)"]:::gone --&gt; W
+    subgraph W["sliding 60s window: these still count"]
+      direction LR
+      A["t=12s"] --&gt; B["t=31s"] --&gt; C["t=55s"]
+    end
+    W --&gt; NEW["new req at t=61s:&lt;br/&gt;drop t=3s, count = 3,&lt;br/&gt;allow if 3 &lt; limit"]
+    classDef gone stroke:#c62828,stroke-width:2px,stroke-dasharray:4 4
+    style W stroke:#2e7d32,stroke-width:2px
+</code></pre>
+
+<p>Exact, but memory grows with <em>requests</em>, not keys (one stored timestamp per request), which the back-of-envelope already ruled out.</p>
+
+<p><strong>Sliding window counter.</strong> The production default. Keep two counters (current + previous window) and weight the previous one by how far you are into the current:</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    P["prev window&lt;br/&gt;count x (1 - 0.25)"] --&gt; S((estimated&lt;br/&gt;rate))
+    Cur["current window&lt;br/&gt;count"] --&gt; S
+    S --&gt; Chk{under limit?}
+    style S stroke:#2e7d32,stroke-width:2px
+</code></pre>
+
+<p>Two counters per key, smooths the cliff, off by a few percent at the edges. Exactly the error “load protection” lets us accept.</p>
+
+<p><strong>Token bucket.</strong> The other production winner, and the first algorithm on this ladder that handles <em>bursts</em> on purpose. A <strong>burst</strong> is a short spike where requests arrive much faster than the average allowed rate: say 50 requests in one second under a 10-per-second limit. The real question is <em>when a client that has been quiet suddenly spikes, do you let the spike through?</em> A window algorithm says no. Token bucket says yes, up to a point. A bucket holds up to B tokens, refills at R/sec; each request spends one; empty means reject. A client that was idle has a full bucket and can spend it at once, then is throttled to the steady refill rate.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    REFILL[Refill R tokens/sec] --&gt; BUCKET[(Bucket&lt;br/&gt;cap B tokens)]
+    REQ[Request] --&gt;|take 1| BUCKET
+    BUCKET --&gt;|token available| OK[Allow]
+    BUCKET --&gt;|empty| NO[Reject 429]
+    style OK stroke:#2e7d32,stroke-width:2px
+    style NO stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p>Two knobs cleanly separate <em>average rate</em> (R) from <em>burst tolerance</em> (B). State is a count plus a timestamp; refill is computed lazily.</p>
+
+<p><strong>Leaky bucket.</strong> Mirror image: requests queue and drain at a fixed rate, overflow rejected. Deliberately <em>flattens</em> bursts into a smooth outflow. Right in front of a fragile downstream, wrong in front of a normal API.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    IN[Bursty requests] --&gt; Q[(Queue)]
+    Q --&gt;|leak at fixed rate| OUT[Smooth outflow]
+    Q --&gt;|full| DROP[Reject]
+    style OUT stroke:#2e7d32,stroke-width:2px
+    style DROP stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p><strong>Token vs leaky, the one-line difference:</strong> both cap the same <em>average</em> rate; they differ entirely in what they do with a burst. Feed the identical bursty input to each and watch the output:</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    IN["Burst in:&lt;br/&gt;10 reqs at once"] --&gt; TB{Token bucket}
+    IN --&gt; LB{Leaky bucket}
+    TB --&gt; TBO["Out: burst passes&lt;br/&gt;if tokens saved&lt;br/&gt;(spiky)"]
+    LB --&gt; LBO["Out: steady drip&lt;br/&gt;1 at a time&lt;br/&gt;(smooth)"]
+    style TBO stroke:#2e7d32,stroke-width:2px
+    style LBO stroke:#1565c0,stroke-width:2px
+</code></pre>
+
+<p>Token bucket spends saved-up tokens and lets the burst through, then throttles. Leaky bucket ignores how bumpy the input is and releases at a constant rate. Same average, opposite burst behavior: pick token bucket when a legitimate spike should be served, leaky bucket when a downstream needs a smooth, predictable input.</p>
+
+<p>The ladder, which is the artifact to reconstruct from memory:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Algorithm</th>
+      <th>State per key</th>
+      <th>Boundary accuracy</th>
+      <th>Bursts</th>
+      <th>Verdict</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Fixed window</td>
+      <td>1 counter</td>
+      <td>Poor (2x)</td>
+      <td>No</td>
+      <td>Edge bug bites</td>
+    </tr>
+    <tr>
+      <td>Sliding window log</td>
+      <td>1 ts / request</td>
+      <td>Exact</td>
+      <td>N/A</td>
+      <td>Too much memory</td>
+    </tr>
+    <tr>
+      <td>Sliding window counter</td>
+      <td>2 counters</td>
+      <td>Very good (approx)</td>
+      <td>No</td>
+      <td><strong>Best default</strong></td>
+    </tr>
+    <tr>
+      <td>Token bucket</td>
+      <td>count + ts</td>
+      <td>Good</td>
+      <td>Yes</td>
+      <td><strong>Best when bursts wanted</strong></td>
+    </tr>
+    <tr>
+      <td>Leaky bucket</td>
+      <td>queue + ts</td>
+      <td>Good</td>
+      <td>No (smooths)</td>
+      <td>Fragile downstream</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Remember two: <strong>sliding window counter</strong> for general protection, <strong>token bucket</strong> to reward idle clients with burst capacity.</p>
+
+<h3 id="step-6-the-actual-hard-part-is-distribution">Step 6: the actual hard part is distribution</h3>
+
+<p>One machine works. A hundred gateways develop one disease: <strong>whose counter is it?</strong></p>
+
+<pre><code class="language-mermaid">flowchart TD
+    C[Client&lt;br/&gt;limit 1000/min] --&gt; LB[Load balancer]
+    LB --&gt; G1[GW1: sees 1000]
+    LB --&gt; G2[GW2: sees 1000]
+    LB --&gt; G3[... x100]
+    G1 --&gt; BAD[Actual allowed:&lt;br/&gt;100,000/min]
+    G2 --&gt; BAD
+    G3 --&gt; BAD
+    style BAD stroke:#c62828,stroke-width:3px
+</code></pre>
+
+<p>Local counters silently multiply the limit by the fleet size. Catching this is most of what the “distributed” part tests. Three ways out:</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    Q{how strict?} --&gt; A["A: Shared store&lt;br/&gt;correct&lt;br/&gt;+1ms/req&lt;br/&gt;Redis = your uptime"]
+    Q --&gt; B["B: Sticky routing&lt;br/&gt;fast, local&lt;br/&gt;hot keys hurt&lt;br/&gt;reshuffle on scale"]
+    Q --&gt; C["C: Local + async sync&lt;br/&gt;fastest at scale&lt;br/&gt;briefly over-allows"]
+    style A stroke:#1565c0,stroke-width:2px
+    style B stroke:#6a1b9a,stroke-width:2px
+    style C stroke:#ef6c00,stroke-width:2px
+</code></pre>
+
+<ul>
+  <li><strong>A: shared central store.</strong> Global count, correct, simplest. Cost: the round trip on every request, and Redis availability becomes yours. What most systems do.</li>
+  <li><strong>B: sticky routing.</strong> Consistent-hash each key to one gateway, local counters correct again. Cost: hot keys overload their gateway; joins/leaves reshuffle and scramble counts.</li>
+  <li><strong>C: local + async reconciliation.</strong> Enforce locally for speed, sync to a shared view every second. Cost: bounded, short-lived over-allow. The “approximately right is fine” requirement cashed into an architecture.</li>
+</ul>
+
+<p><strong>The race condition</strong> in Option A. The obvious implementation reads the counter, checks it, then writes the increment back. Those are three separate steps, and two gateways can interleave between them:</p>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant G1 as Gateway 1
+    participant R as Redis (count=999, limit=1000)
+    participant G2 as Gateway 2
+    G1-&gt;&gt;R: GET count
+    R--&gt;&gt;G1: 999
+    G2-&gt;&gt;R: GET count
+    R--&gt;&gt;G2: 999
+    Note over G1,G2: both computed 999+1 = 1000, both think "allowed"
+    G1-&gt;&gt;R: SET count = 1000 (allow)
+    G2-&gt;&gt;R: SET count = 1000 (allow)
+    Note over R: two requests allowed, count is 1000 not 1001&lt;br/&gt;the limit leaked, and the counter is now wrong
+</code></pre>
+
+<p>This is a time-of-check-to-time-of-use bug. The read and the write have to be one indivisible step. The fix is <em>not</em> to wrap a <code class="language-plaintext highlighter-rouge">GET</code> then an <code class="language-plaintext highlighter-rouge">INCR</code> in a script (that just reproduces the same read-then-write shape). The fix is to lean on the one Redis command that is already atomic and <em>returns the new value in the same call</em>: <code class="language-plaintext highlighter-rouge">INCR</code>. There is no separate read to race against, because increment-and-return is a single operation.</p>
+
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- KEYS[1]=counter, ARGV[1]=limit, ARGV[2]=window secs</span>
+<span class="kd">local</span> <span class="n">count</span> <span class="o">=</span> <span class="n">redis</span><span class="p">.</span><span class="n">call</span><span class="p">(</span><span class="s1">'INCR'</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>   <span class="c1">-- atomically increments AND returns new value</span>
+<span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">then</span>
+  <span class="n">redis</span><span class="p">.</span><span class="n">call</span><span class="p">(</span><span class="s1">'EXPIRE'</span><span class="p">,</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ARGV</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>    <span class="c1">-- first hit of the window: start the clock once</span>
+<span class="k">end</span>
+<span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">ARGV</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">then</span>
+  <span class="k">return</span> <span class="mi">0</span>                                    <span class="c1">-- over limit: deny</span>
+<span class="k">end</span>
+<span class="k">return</span> <span class="mi">1</span>                                      <span class="c1">-- allowed</span>
+</code></pre></div></div>
+
+<p>Two things make this correct where the naive version was not:</p>
+
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">INCR</code> does the read and the write in one atomic step.</strong> Two concurrent gateways calling <code class="language-plaintext highlighter-rouge">INCR</code> get <code class="language-plaintext highlighter-rouge">1000</code> and <code class="language-plaintext highlighter-rouge">1001</code> back, distinct values, so exactly one of them sees the value that crosses the limit. Nobody reads a stale <code class="language-plaintext highlighter-rouge">999</code>.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">EXPIRE</code> only on the first hit (<code class="language-plaintext highlighter-rouge">count == 1</code>).</strong> Setting the TTL on <em>every</em> request would push the expiry forward each time, so under sustained traffic the window would never roll over and the key would never reset. Setting it once, when the window’s first request creates the key, fixes the window to a real 60-second span and still garbage-collects the key when the client goes idle.</li>
+</ul>
+
+<p>The Lua wrapper earns its keep even though <code class="language-plaintext highlighter-rouge">INCR</code> is already atomic: it bundles the increment and the conditional <code class="language-plaintext highlighter-rouge">EXPIRE</code> into a single atomic unit and a single round trip, so a crash can never leave a counter with no TTL (a key that leaks forever and never resets).</p>
+
+<h3 id="step-7-how-it-breaks">Step 7: how it breaks</h3>
+
+<pre><code class="language-mermaid">flowchart TD
+    DOWN{Store unreachable?} --&gt;|Fail open| OPEN[Allow all&lt;br/&gt;site stays up, no protection&lt;br/&gt;= general limiter]
+    DOWN --&gt;|Fail closed| CLOSED[Reject all&lt;br/&gt;protected, but limiter outage&lt;br/&gt;= platform outage&lt;br/&gt;= security/billing only]
+    style OPEN stroke:#2e7d32,stroke-width:2px
+    style CLOSED stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<ul>
+  <li><strong>Fail open vs closed</strong> is a decision you make on purpose. A limiter that can take the site down became the risk it was meant to prevent, so general limiters fail open; hard security/billing boundaries fail closed. “It depends, and here’s what on” is the right answer.</li>
+  <li><strong>Retry storms.</strong> A rejected client that retries immediately sends <em>more</em> traffic than an unthrottled one. This is why <code class="language-plaintext highlighter-rouge">Retry-After</code> matters and why the server must protect itself anyway.</li>
+  <li><strong>Hot keys.</strong> One noisy key hammers a shard or gateway. Shed it cheaply with a small local pre-check at the edge.</li>
+</ul>
+
+<p>Follow-ups an interviewer reaches for: per-tier rules, distributed config that propagates in seconds, and observability, which at 1M req/s is its own <a href="/blog/network-telemetry-is-a-big-data-problem">big-data problem</a>.</p>
+
+<h3 id="in-practice-wrap-dont-write">In practice: wrap, don’t write</h3>
+
+<p>The whiteboard version implements an algorithm. The production version usually should not. Most modern runtimes already ship rate-limiting primitives (fixed window, sliding window, token bucket, concurrency) that are correct, tested, and tuned. On a real service the job is not “implement windowing,” it is <strong>pick an algorithm and a partition key</strong>, then make every decision observable.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    APP[App code] --&gt;|acquire| DEC[Monitoring decorator]
+    DEC --&gt;|delegate| INNER[Built-in limiter&lt;br/&gt;partitioned by key]
+    INNER --&gt;|lease| DEC
+    DEC --&gt;|metrics + logs| OBS[(Telemetry)]
+    DEC --&gt;|acquired| APP
+    DEC --&gt;|denied| M429[Map to 429&lt;br/&gt;+ Retry-After]
+    style DEC stroke:#1565c0,stroke-width:3px
+    style INNER stroke:#2e7d32,stroke-width:2px
+</code></pre>
+
+<p>The <strong>partition key</strong> is exactly the “key” from Step 1: same key means same limiter instance and a shared budget. The valuable engineering is the glue you write once:</p>
+
+<ul>
+  <li><strong>A thin decorator</strong> over the built-in limiter that logs and emits a metric around every acquire and the lease it returns. Callers still depend only on the standard limiter contract, so monitoring is transparent.</li>
+  <li><strong>429 mapping.</strong> Exhaustion becomes <code class="language-plaintext highlighter-rouge">429 Too Many Requests</code> with the runtime’s recommended <code class="language-plaintext highlighter-rouge">Retry-After</code> surfaced on the response. Treat that 429 as an expected, benign outcome so it does not count against availability SLOs.</li>
+  <li><strong>Telemetry in two layers.</strong> Periodic in-flight gauges per limiter (acquired and failed leases, incremented on acquire and decremented when the lease is disposed, not cumulative totals), plus a per-request signal on each acquire.</li>
+</ul>
+
+<p>The gotchas are all the same shape, “the limiter must remember state across requests”:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Gotcha</th>
+      <th>Why it bites</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Register the limiter once (singleton)</strong></td>
+      <td>A per-request limiter has no memory, so the window never fills and nothing is ever limited</td>
+    </tr>
+    <tr>
+      <td><strong>Dispose leases</strong></td>
+      <td>An acquired lease holds budget and in-flight count until disposed; a leaked lease skews both the limit and the gauges</td>
+    </tr>
+    <tr>
+      <td><strong>Keep metric dimensions low-cardinality</strong></td>
+      <td>Emitting the resource <em>value</em> as a dimension is powerful but will blow up the metrics backend unless it is a handful of discrete values</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This is the same lesson as the rest of the post from the other direction: the counter, the atomicity, and the expiry are hard enough that when the platform already solved them correctly, the leverage is in observability and correct wiring, not in rewriting the algorithm.</p>
+
+<h3 id="the-pattern-under-the-pattern">The pattern under the pattern</h3>
+
+<p>Every question in this series rewards the same move: <strong>let the requirements tell you how much correctness you must buy, then spend exactly that much.</strong> The candidate who asks “how strict?” in the first two minutes is the one who can justify an approximate algorithm and a fail-open policy twenty minutes later, because both trace straight back to that answer. The boxes are easy. Knowing which corner you may cut, and why, is the job.</p>
+
+<p>Next: designing a URL shortener, where the real fight is read-heavy scaling and the cache underneath, not the hashing everyone expects.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

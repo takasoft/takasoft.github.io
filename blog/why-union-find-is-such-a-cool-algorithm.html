@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Why union find is such a cool algorithm">
+  <meta property="og:description" content="One of my favorite algorithms in graph theory is Union Find. It is a beautiful algorithm for tracking disjoint sets. A disjoint set is a group of nodes in an undirected graph that are all connected...">
+  <meta property="og:url" content="https://takasoft.io/blog/why-union-find-is-such-a-cool-algorithm">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Why union find is such a cool algorithm">
+  <meta name="twitter:description" content="One of my favorite algorithms in graph theory is Union Find. It is a beautiful algorithm for tracking disjoint sets. A disjoint set is a group of nodes in an undirected graph that are all connected...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Why union find is such a cool algorithm - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Why union find is such a cool algorithm</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2025-02-06T00:00:00+00:00">
+          2025-02-06
+        </time>
+      </span>
+    </span>
+    <p>One of my favorite algorithms in graph theory is Union Find. It is a beautiful algorithm for tracking disjoint sets. A disjoint set is a group of nodes in an undirected graph that are all connected to each other through some path, but disconnected from any node outside the set.</p>
+
+<p>Suppose we have the following graph. The disjoint sets here are <code class="language-plaintext highlighter-rouge">{0, 1, 2, 3}</code> and <code class="language-plaintext highlighter-rouge">{4, 5, 6}</code> — clearly disconnected from each other.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    n0((0)) --- n1((1))
+    n1 --- n2((2))
+    n0 --- n3((3))
+    n4((4)) --- n5((5))
+    n5 --- n6((6))
+</code></pre>
+
+<p>Let’s say we are asked to check if two nodes <code class="language-plaintext highlighter-rouge">u</code> and <code class="language-plaintext highlighter-rouge">v</code> are within the same disjoint set, for example <code class="language-plaintext highlighter-rouge">u = 1</code> and <code class="language-plaintext highlighter-rouge">v = 3</code>. How can we check this efficiently?</p>
+
+<h4 id="a-naive-approach">A naive approach</h4>
+
+<p>One way is to run BFS or DFS from <code class="language-plaintext highlighter-rouge">u</code> to <code class="language-plaintext highlighter-rouge">v</code>. This approach should be fine if we only need to check one pair. But what if we need to check a large number of pairs?</p>
+
+<p>Let’s say there are <code class="language-plaintext highlighter-rouge">V</code> nodes and <code class="language-plaintext highlighter-rouge">E</code> edges, where <code class="language-plaintext highlighter-rouge">V</code> and <code class="language-plaintext highlighter-rouge">E</code> are both <code class="language-plaintext highlighter-rouge">5 * 10^6</code> (5 million). We are also given <code class="language-plaintext highlighter-rouge">k</code> queries, where <code class="language-plaintext highlighter-rouge">k = 5 * 10^6</code> (5 million). At this scale, we need a really efficient algorithm to find the connection.</p>
+
+<p>Let’s stick with the BFS/DFS approach for a moment. We can come up with an algorithm that keeps track of visited nodes and efficiently traverses the entire graph. The algorithm can then return the following mapping.</p>
+
+<p>Here, <code class="language-plaintext highlighter-rouge">parent</code> is the one node that every node in the disjoint set can reach. We can also call this the representative of the disjoint set.</p>
+
+<pre><code class="language-mermaid">flowchart BT
+    n0((0))
+    n4((4))
+    n1((1)) --&gt; n0
+    n2((2)) --&gt; n0
+    n3((3)) --&gt; n0
+    n5((5)) --&gt; n4
+    n6((6)) --&gt; n4
+</code></pre>
+
+<p>We can construct this mapping in <code class="language-plaintext highlighter-rouge">O(V)</code> time because we visit each node only once. Then for each query we just check if the two nodes have the same parent. The total time complexity is <code class="language-plaintext highlighter-rouge">O(V + k)</code>, which is doable.</p>
+
+<p>However, a problem arises when we want to keep connecting disjoint sets dynamically. Let’s say we want to connect nodes <code class="language-plaintext highlighter-rouge">2</code> and <code class="language-plaintext highlighter-rouge">5</code>. The graph then looks like this.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    n0((0)) --- n1((1))
+    n1 --- n2((2))
+    n0 --- n3((3))
+    n4((4)) --- n5((5))
+    n5 --- n6((6))
+    n2 --- n5
+</code></pre>
+
+<p>We first look at the <code class="language-plaintext highlighter-rouge">node -&gt; parent</code> mapping and check whether the two nodes have the same parent. If they don’t, we update the parents so that all nodes in the two merged sets share the same parent. I picked <code class="language-plaintext highlighter-rouge">0</code> as the new parent here. The mapping then becomes:</p>
+
+<pre><code class="language-mermaid">flowchart BT
+    n0((0))
+    n1((1)) --&gt; n0
+    n2((2)) --&gt; n0
+    n3((3)) --&gt; n0
+    n4((4)) --&gt; n0
+    n5((5)) --&gt; n0
+    n6((6)) --&gt; n0
+</code></pre>
+
+<p>This update can take <code class="language-plaintext highlighter-rouge">O(V)</code> because, in the worst case, we have to touch almost every node. Now, if we add the requirement that a new connection gets added on every query, the current approach becomes infeasible. The time complexity becomes <code class="language-plaintext highlighter-rouge">O(V + V * k) = O(V * k)</code>. With a rough calculation, assuming a computer that handles <code class="language-plaintext highlighter-rouge">10^8</code> operations per second, we’d need <code class="language-plaintext highlighter-rouge">(5 * 10^6) * (5 * 10^6) / 10^8 ~= 69.4 hours</code> just to compute this.</p>
+
+<h4 id="enter-union-find">Enter Union Find</h4>
+
+<p>Can we do better? It turns out there’s an algorithm that handles each graph update in nearly constant time — more specifically, in <code class="language-plaintext highlighter-rouge">O(α(n))</code>, where <code class="language-plaintext highlighter-rouge">α(n)</code> is the inverse Ackermann function. For all practical inputs, <code class="language-plaintext highlighter-rouge">α(n)</code> can be treated as a constant. So effectively, we can solve the whole problem in nearly <code class="language-plaintext highlighter-rouge">O(k)</code> time.</p>
+
+<p>Union Find is also useful when you’re only given a list of edges. To run DFS or BFS you first have to build an adjacency list or adjacency matrix; with Union Find that step is unnecessary, since the <code class="language-plaintext highlighter-rouge">union</code> function takes an edge directly as its argument.</p>
+
+<h4 id="code">Code</h4>
+
+<p>Below is the complete code for the union find algorithm.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UnionFind</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">parent</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">rank</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">size</span>
+
+    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">==</span> <span class="n">u</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">u</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">union</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="o">==</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">rank</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">self</span><span class="p">.</span><span class="n">rank</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">rank</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">+=</span> <span class="n">self</span><span class="p">.</span><span class="n">rank</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">rank</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">+=</span> <span class="n">self</span><span class="p">.</span><span class="n">rank</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>There are two main parts in this algorithm. One is union by rank and another is path compression.</p>
+
+<h4 id="union-by-rank">Union by Rank</h4>
+
+<p>Let’s use the following example. The parent of the first set is <code class="language-plaintext highlighter-rouge">0</code>, and the parent of the second set is <code class="language-plaintext highlighter-rouge">3</code>.</p>
+
+<pre><code class="language-mermaid">flowchart TB
+    n0((0)) --- n1((1))
+    n1 --- n2((2))
+    n3((3)) --- n4((4))
+</code></pre>
+
+<p>Let’s see what happens if we don’t consider rank.</p>
+
+<p><code class="language-plaintext highlighter-rouge">parent</code> stores a tree where each child points upward to its parent, and the root is the representative of the disjoint set. When the union operation connects two disjoint sets, we can end up in a situation where one side contains a lot more nodes than the other.</p>
+
+<p>In the worst case, the parent tree after <code class="language-plaintext highlighter-rouge">union(2, 3)</code> can look like the following, since we don’t check the rank. The <code class="language-plaintext highlighter-rouge">find</code> operation becomes slow — <code class="language-plaintext highlighter-rouge">O(n)</code> in the worst case.</p>
+
+<pre><code class="language-mermaid">flowchart TB
+    n3((3)) --- n0((0))
+    n3 --- n4((4))
+    n0 --- n1((1))
+    n1 --- n2((2))
+</code></pre>
+
+<p>Now let’s introduce the concept of rank. The rank loosely captures the height of the tree. When connecting one tree to another, we make the shorter tree’s root point to the taller tree’s root. This keeps the resulting tree shorter, like the following.</p>
+
+<pre><code class="language-mermaid">flowchart TB
+    n0((0)) --- n3((3))
+    n0 --- n1((1))
+    n3 --- n4((4))
+    n1 --- n2((2))
+</code></pre>
+
+<h4 id="path-compression">Path Compression</h4>
+
+<p>Path compression is implemented in the <code class="language-plaintext highlighter-rouge">find</code> function. Instead of simply returning <code class="language-plaintext highlighter-rouge">parent[u]</code>, we recursively make every node along the path point directly to the root.</p>
+
+<p>With path compression, the earlier result becomes the following. The tree is now just height 2.</p>
+
+<pre><code class="language-mermaid">flowchart TB
+    n0((0)) --- n3((3))
+    n0 --- n1((1))
+    n0 --- n4((4))
+    n0 --- n2((2))
+</code></pre>
+
+<h4 id="wrap-up">Wrap-up</h4>
+
+<p>Union by rank and path compression are both fairly simple on their own — just a few lines of code each — but combined they push the per-operation cost down to effectively constant time. That’s the part that always feels a little magical to me. The inverse Ackermann function shows up as the upper bound from a tight proof, and for any input you can realistically build, <code class="language-plaintext highlighter-rouge">α(n)</code> is at most 4 or 5.</p>
+
+<p>Beyond the toy connectivity problem in this post, Union Find shows up in Kruskal’s MST algorithm, percolation models, and connected-component labeling for images. Anywhere you’re tracking “which group does this element belong to” while merges keep happening, it’s likely the right tool.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/icpc-na-championship">Competed at ICPC North America Championship</a>
+            <small>2020-02-26</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

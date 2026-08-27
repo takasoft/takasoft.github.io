@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="RAG in production is mostly retrieval, not generation">
+  <meta property="og:description" content="Many teams shipping retrieval-augmented generation today started from the same five-line tutorial: chunk your documents, embed them into a vector store, embed the user’s question, fetch the nearest...">
+  <meta property="og:url" content="https://takasoft.io/blog/rag-in-production-is-mostly-retrieval">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RAG in production is mostly retrieval, not generation">
+  <meta name="twitter:description" content="Many teams shipping retrieval-augmented generation today started from the same five-line tutorial: chunk your documents, embed them into a vector store, embed the user’s question, fetch the nearest...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      RAG in production is mostly retrieval, not generation - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">RAG in production is mostly retrieval, not generation</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-05-25T00:00:00+00:00">
+          2026-05-25
+        </time>
+      </span>
+    </span>
+    <p>Many teams shipping retrieval-augmented generation today started from the same five-line tutorial: chunk your documents, embed them into a vector store, embed the user’s question, fetch the nearest hits, hand them to an LLM. It works beautifully in a notebook. It also has almost nothing to do with what a real RAG product looks like once it has users.</p>
+
+<p>In production, the LLM on top is the cheapest and most interchangeable piece of the system. What actually decides whether the product is useful — whether it finds the right document, ignores the wrong ones, respects who is allowed to see what, and stays current as the underlying data changes — is the <strong>retrieval layer</strong>. And the retrieval layer is not “AI.” It is a piece of <em>data infrastructure</em>: indexes, change streams, derived tables, sharding, eval.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    Q[User query] --&gt; EMB[Embed]
+    EMB --&gt; ANN[Vector DB&lt;br/&gt;top-k]
+    ANN --&gt; P[Prompt]
+    P --&gt; LLM[LLM]
+    LLM --&gt; A[Answer]
+
+    style ANN stroke:#c62828,stroke-width:3px
+    style LLM stroke-dasharray: 4 4
+</code></pre>
+
+<p>The red box is where almost all the quality lives. The dashed box is what most teams spend their time on.</p>
+
+<p>This post walks through what each piece of a real RAG system actually does, why the naive version breaks the moment you point it at a real corpus, and how every piece maps onto patterns that backend and data engineers already know. The audience I have in mind is a working software engineer — you do not need an ML background, and any piece of infrastructure jargon I lean on (CDC, sharding, inverted indexes, materialized views) gets a one-line gloss the first time it shows up. The argument I want to make is that RAG is much more of a search-and-data-infrastructure problem than an “AI” problem.</p>
+
+<h3 id="quick-vocabulary-anchored-to-things-you-already-know">Quick vocabulary, anchored to things you already know</h3>
+
+<ul>
+  <li>
+    <p><strong>Embedding</strong> — a function that takes a piece of text and turns it into an array of numbers. The array always has the same length, no matter whether the input is one word or one page. Something like:</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">embed</span><span class="p">(</span><span class="sh">"</span><span class="s">annual fees</span><span class="sh">"</span><span class="p">)</span>
+<span class="c1"># -&gt; [ 0.0123, -0.2450, 0.0871, ..., -0.0418]   # always exactly 1024 numbers
+</span><span class="nf">embed</span><span class="p">(</span><span class="sh">"</span><span class="s">yearly charges</span><span class="sh">"</span><span class="p">)</span>
+<span class="c1"># -&gt; [ 0.0119, -0.2401, 0.0863, ..., -0.0405]   # also 1024 numbers; very close to the one above
+</span></code></pre></div>    </div>
+
+    <p>Texts that mean similar things produce arrays that are close to each other (small numeric differences). Texts about unrelated things produce arrays that are far apart. Think of it as a learned hash function — except instead of avalanching similar inputs to random outputs the way a normal hash does, this one deliberately puts similar inputs near each other.</p>
+  </li>
+  <li><strong>Vector</strong> — just the name for one of those arrays of numbers. A 1024-dim vector is an array of 1024 numbers. Nothing more exotic than that.</li>
+  <li><strong>Vector database</strong> — a database whose superpower is one specific query: <em>“given this vector, find the stored vectors most similar to it.”</em> Plays the same architectural role that a B-tree plays in a relational DB — just over arrays of numbers instead of sortable columns. Many vector DBs are layered on top of engines you already know: <code class="language-plaintext highlighter-rouge">pgvector</code> is a Postgres extension; Qdrant uses RocksDB underneath; Pinecone is custom. From the outside they look like a normal CRUD API.</li>
+  <li><strong>Top-k</strong> — the search asks for the <code class="language-plaintext highlighter-rouge">k</code> closest matches and nothing more. <code class="language-plaintext highlighter-rouge">k=10</code> means “give me the 10 nearest neighbors.” It is a knob, not a concept.</li>
+  <li><strong>ANN (Approximate Nearest Neighbor)</strong> — brute-force comparing the query against all 50M stored vectors would be <code class="language-plaintext highlighter-rouge">O(N)</code> per query, which falls over at scale. ANN trades a small amount of accuracy for much faster search (sub-linear in N). Same kind of trade as any other database index: pay some storage and write cost to avoid a full scan.</li>
+  <li><strong>HNSW (Hierarchical Navigable Small World)</strong> — the ANN algorithm running inside almost every vector DB. The data is stored as a graph: each vector has edges pointing to a handful of its closest neighbors. A query starts at some entry point in the graph and walks greedily toward closer and closer neighbors until it cannot improve. Roughly <code class="language-plaintext highlighter-rouge">log(N)</code> hops to converge. Same intuition as a skip list or a routing table — fan out from anywhere, converge quickly to the target.</li>
+  <li><strong>Recall@k</strong> — your accuracy metric. Of the documents that <em>should</em> have come back for a given query (judged by a human or a labeled set), what fraction actually made it into your top-k? <code class="language-plaintext highlighter-rouge">recall@10 = 0.9</code> means: 90% of the time, at least one truly-correct document was in the top-10. This is the cache-hit-rate of search — the number you optimize.</li>
+  <li><strong>Eval set</strong> — a list of <code class="language-plaintext highlighter-rouge">(query, [correct_doc_ids])</code> pairs you’ve curated ahead of time. You run your pipeline against each query and check how often the correct doc appears in the top-k. It plays the same role as a regression test suite. Without one, you cannot tell whether a change helped or hurt — you are guessing.</li>
+</ul>
+
+<p>With those in hand:</p>
+
+<h3 id="where-the-naive-pipeline-breaks">Where the naive pipeline breaks</h3>
+
+<p>On 3,000 clean Markdown pages, the naive pipeline above gets ~75% acceptable on a hand-written eval. Point it at a 4-million-document enterprise SharePoint and you’ll hit every one of these failures in the first week. They are concrete; this is what actually happens:</p>
+
+<ul>
+  <li><strong>The right document is in the corpus but never makes it into the top-k.</strong> A user asks <em>“what is our refund window for enterprise customers?”</em> The answer is one sentence buried in a 90-page contract PDF. After chunking, that sentence ends up in a 512-token chunk that <em>also</em> contains 400 tokens of legal boilerplate. When the embedder averages the meaning of all 512 tokens into one vector, the boilerplate dominates. The query’s embedding doesn’t land close to that chunk. The document exists; the search just can’t find it.</li>
+  <li><strong>The top-10 is ten near-duplicate copies of the same policy from five org units.</strong> Engineering, Sales, HR, Legal, and Finance each have their own copy of the refund-policy doc with two-word differences. All ten slots get eaten by the same content; the one chunk that would have actually answered the question is at rank 11.</li>
+  <li><strong>Multi-turn falls apart.</strong> The user asks <em>“and for enterprise customers?”</em> as a follow-up. Embedded literally, that phrase has no semantic content — it could be about anything — and lands somewhere random in vector space.</li>
+  <li><strong>Permissions leak.</strong> A user from team A submits a query, the vector search ignores who’s asking, and returns a confidential doc that belongs to team B. The LLM helpfully quotes from it.</li>
+  <li><strong>Quality regresses and nobody can tell why.</strong> Users complain. Is it the embedder? The chunking? The prompt? The model? Without per-stage metrics, you cannot localize the regression and you cannot fix it.</li>
+</ul>
+
+<p>Every one of these is a <em>retrieval</em> problem. Swapping GPT-4o-mini for Claude Opus doesn’t move any of them.</p>
+
+<h3 id="chunking-deciding-what-a-row-in-the-index-even-is">Chunking: deciding what a row in the index even is</h3>
+
+<p>A single row in the vector DB is one <em>chunk</em> of text plus its embedding. You don’t store whole documents — embedding a 50-page PDF as one vector smears all of its meaning into a single point and matches nothing well. So you split.</p>
+
+<p>How you split <em>looks</em> like a config knob — every tutorial just shows <code class="language-plaintext highlighter-rouge">chunk_size=512, chunk_overlap=50</code> and moves on. It is actually a system design decision. The chunk is the smallest unit your search can ever return. Pick badly, and every improvement downstream has a ceiling.</p>
+
+<p>The pattern that wins on long documents is <strong>parent-child chunking</strong>. Like a covering index plus a row store. The vector DB holds small chunks (256 tokens) because small chunks have sharp, focused embeddings. A separate document store holds larger <em>parent</em> passages (say 2,000 tokens) because the LLM needs surrounding context to actually answer the question. The two are joined by a <code class="language-plaintext highlighter-rouge">parent_id</code> foreign key.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    D[Document&lt;br/&gt;~8000 tokens] --&gt; P1[Parent chunk&lt;br/&gt;~2000 tokens]
+    D --&gt; P2[Parent chunk&lt;br/&gt;~2000 tokens]
+    D --&gt; P3[Parent chunk&lt;br/&gt;~2000 tokens]
+    P1 --&gt; C1[child 256t]
+    P1 --&gt; C2[child 256t]
+    P1 --&gt; C3[child 256t]
+    P2 --&gt; C4[child 256t]
+    P2 --&gt; C5[child 256t]
+    P3 --&gt; C6[child 256t]
+    P3 --&gt; C7[child 256t]
+
+    C1 -.embed.-&gt; V[(Vector index&lt;br/&gt;indexed on children)]
+    C2 -.embed.-&gt; V
+    C3 -.embed.-&gt; V
+    C4 -.embed.-&gt; V
+    C5 -.embed.-&gt; V
+    C6 -.embed.-&gt; V
+    C7 -.embed.-&gt; V
+
+    V -. match on C4 .-&gt; R[Return parent P2&lt;br/&gt;as the actual context]
+
+    style C4 stroke:#c62828,stroke-width:2px
+    style R stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p>The chunker writes both sides:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">parent_child_chunks</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">child_tokens</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">parent_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">):</span>
+    <span class="n">parents</span> <span class="o">=</span> <span class="nf">split_by_headings</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="n">parent_tokens</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">parent_id</span><span class="p">,</span> <span class="n">parent</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">parents</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nf">split_tokens</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">text</span><span class="p">,</span> <span class="n">child_tokens</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">.</span><span class="nf">append</span><span class="p">({</span>
+                <span class="sh">"</span><span class="s">child_text</span><span class="sh">"</span><span class="p">:</span> <span class="n">child</span><span class="p">,</span>           <span class="c1"># what gets embedded
+</span>                <span class="sh">"</span><span class="s">parent_id</span><span class="sh">"</span><span class="p">:</span> <span class="n">parent_id</span><span class="p">,</span>        <span class="c1"># foreign key
+</span>                <span class="sh">"</span><span class="s">parent_text</span><span class="sh">"</span><span class="p">:</span> <span class="n">parent</span><span class="p">.</span><span class="n">text</span><span class="p">,</span>    <span class="c1"># written once to doc store
+</span>                <span class="sh">"</span><span class="s">heading_path</span><span class="sh">"</span><span class="p">:</span> <span class="n">parent</span><span class="p">.</span><span class="n">heading_path</span><span class="p">,</span>
+                <span class="sh">"</span><span class="s">source_id</span><span class="sh">"</span><span class="p">:</span> <span class="n">doc</span><span class="p">.</span><span class="nb">id</span><span class="p">,</span>
+            <span class="p">})</span>
+    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></div>
+
+<p>Only the child gets embedded. The parent text goes into a normal key-value or row store. At query time you do an index lookup, then a join:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 1. find the most relevant CHILDREN by embedding similarity
+</span><span class="n">child_hits</span> <span class="o">=</span> <span class="n">vector_db</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="nf">embed</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="c1"># [{"child_id": 4823, "parent_id": 12, "source_id": "policy.pdf"}, ...]
+</span>
+<span class="c1"># 2. dedupe up to the PARENTS those children point to
+</span><span class="n">parent_ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">h</span><span class="p">[</span><span class="sh">"</span><span class="s">parent_id</span><span class="sh">"</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">child_hits</span><span class="p">}</span>
+<span class="n">parents</span>    <span class="o">=</span> <span class="n">doc_store</span><span class="p">.</span><span class="nf">get_many</span><span class="p">(</span><span class="n">parent_ids</span><span class="p">)</span>  <span class="c1"># fetch full parent_text
+</span>
+<span class="c1"># 3. ship the PARENT text (not the child) to the LLM
+</span><span class="n">context</span> <span class="o">=</span> <span class="sh">"</span><span class="se">\n\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sh">"</span><span class="s">parent_text</span><span class="sh">"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Two more things matter beyond the split:</p>
+
+<ol>
+  <li><strong>Prefix the heading path onto the embedded text.</strong> A chunk that reads <code class="language-plaintext highlighter-rouge">"Customers may cancel within 30 days"</code> is ambiguous in isolation. Embedding <code class="language-plaintext highlighter-rouge">"Billing &gt; Refunds &gt; Enterprise\n\nCustomers may cancel within 30 days"</code> instead is not. Free recall gain, zero infra cost.</li>
+  <li><strong>Type-aware splitters.</strong> Never split inside a function body in source code. Never break a table row apart. Repeat column headers on every chunk of a wide table. These move retrieval quality more than swapping embedding models does.</li>
+</ol>
+
+<p>A serious corpus is <em>typed</em> — code, PDFs, support tickets, transcripts, tables — and each type wants its own splitter. The splitter is the same kind of engineering artifact as any other piece of ingest code: versioned, tested, monitored.</p>
+
+<h3 id="embeddings-pick-a-model-then-move-on">Embeddings: pick a model, then move on</h3>
+
+<p>Which embedding model you pick matters less than three operational decisions about <em>how</em> you store the result.</p>
+
+<p><strong>Dimension and storage cost.</strong> A 3072-dim float32 vector is 12 KB on disk (3072 numbers × 4 bytes each). Multiply that out across 50M chunks and you are looking at 600 GB <em>before</em> the HNSW graph’s overhead, which typically adds another ~2x on top.</p>
+
+<p>Most modern embedders support <strong>MRL — Matryoshka Representation Learning</strong> — a training trick that makes the first 256 floats of the model’s 3072-float output usable as a (slightly lower quality) embedding on their own. Think Russian nesting dolls: every prefix is itself a valid embedding. Store only the first 512 floats and you keep most of the quality at 6x less storage. Models that do this: OpenAI’s <code class="language-plaintext highlighter-rouge">text-embedding-3-*</code>, Nomic Embed v1.5.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">v</span> <span class="o">=</span> <span class="n">openai</span><span class="p">.</span><span class="n">embeddings</span><span class="p">.</span><span class="nf">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="sh">"</span><span class="s">text-embedding-3-large</span><span class="sh">"</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="n">text</span><span class="p">).</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">embedding</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[:</span><span class="mi">512</span><span class="p">]</span>              <span class="c1"># MRL truncation: keep first 512 of 3072
+</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>  <span class="c1"># normalize (see below)
+</span></code></pre></div></div>
+
+<p><strong>Normalize your vectors.</strong> The standard similarity measure between two embeddings is <em>cosine similarity</em> — the angle between the two vectors. For speed, vector DBs implement this as a <em>dot product</em>: multiply pairwise, sum the products. The catch: dot product equals cosine only if both vectors have length 1.</p>
+
+<p>If you skip the normalization step (<code class="language-plaintext highlighter-rouge">v / np.linalg.norm(v)</code>), longer vectors mechanically score higher against everything just for being longer. Your top-k starts coming back biased toward the same handful of long chunks regardless of query — like a SQL <code class="language-plaintext highlighter-rouge">ORDER BY relevance</code> that is secretly sorting by <code class="language-plaintext highlighter-rouge">length(text)</code>.</p>
+
+<p>The fix is one line. A surprising fraction of production systems get this wrong.</p>
+
+<p><strong>Tag every vector with the model that produced it.</strong> Embeddings from different models live in incompatible coordinate systems and cannot be compared. The day you upgrade <code class="language-plaintext highlighter-rouge">text-embedding-3-small</code> → <code class="language-plaintext highlighter-rouge">large</code>, every existing vector is dead and needs re-embedding. If you didn’t tag at write time, you cannot tell which model produced which row, and you cannot do a safe cutover:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">chunk_record</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sh">"</span><span class="s">id</span><span class="sh">"</span><span class="p">:</span> <span class="n">chunk_id</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">vector</span><span class="sh">"</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">embedder</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">text-embedding-3-large</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">embedder_version</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">2024-01</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">dim</span><span class="sh">"</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Then you can dual-write to a v1 and v2 index in parallel, leave reads on v1 until v2’s offline eval beats it, then flip:</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    W[Writer] --&gt; V1[(Index v1&lt;br/&gt;small / 1536d)]
+    W --&gt; V2[(Index v2&lt;br/&gt;large / 3072d)]
+    Q[Query] --&gt; S{Cutover&lt;br/&gt;flag}
+    S --&gt;|reads| V1
+    S -. shadow reads .-&gt; V2
+    V2 -. compare offline .-&gt; EVAL[(Eval)]
+
+    style V2 stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p>Same pattern as any other online-schema-migration with dual writes.</p>
+
+<p>The model upgrade itself is a real expense: 50M chunks × ~400 tokens × $0.13/M tokens ≈ $2,600 and 12–48 hours of throughput. Plan for it on day one.</p>
+
+<p>Domain fine-tuning of the embedder on <code class="language-plaintext highlighter-rouge">(query, relevant-chunk)</code> pairs harvested from your own logs is the single biggest quality lever once everything else is solid. It needs a real eval set — which loops back to the unglamorous evaluation work below.</p>
+
+<h3 id="the-vector-index-and-the-recall-cliff-that-bites-every-team">The vector index, and the recall cliff that bites every team</h3>
+
+<p>This section is about what is happening inside the vector DB when you ask it for the top-k nearest matches — what controls quality, what controls latency, and the one failure mode that surprises every team the first time they hit it in production.</p>
+
+<p>HNSW is the algorithm doing the actual work. As mentioned in the vocabulary: it’s a graph where each vector points to its nearby neighbors, and a query walks the graph greedily until it cannot get any closer. Three knobs control its behavior:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">faiss</span>
+<span class="n">d</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">index</span> <span class="o">=</span> <span class="n">faiss</span><span class="p">.</span><span class="nc">IndexHNSWFlat</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>    <span class="c1"># M: edges-per-node. Higher M = better
+</span>                                        <span class="c1"># recall, more RAM (~linear).
+</span><span class="n">index</span><span class="p">.</span><span class="n">hnsw</span><span class="p">.</span><span class="n">efConstruction</span> <span class="o">=</span> <span class="mi">200</span>         <span class="c1"># how thoroughly to search when building.
+</span>                                        <span class="c1"># Higher = better graph, slower one-time build.
+</span><span class="n">index</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="n">vectors</span><span class="p">)</span>
+
+<span class="n">index</span><span class="p">.</span><span class="n">hnsw</span><span class="p">.</span><span class="n">efSearch</span> <span class="o">=</span> <span class="mi">100</span>               <span class="c1"># at query time: how many candidates to
+</span>                                        <span class="c1"># consider before stopping. Main quality/
+</span>                                        <span class="c1"># latency knob.
+</span><span class="n">D</span><span class="p">,</span> <span class="n">I</span> <span class="o">=</span> <span class="n">index</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="n">query_vec</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">efSearch</code> is the lever you tune in production. Going from 50 → 200 typically moves <code class="language-plaintext highlighter-rouge">recall@10</code> from ~92% → ~99% at 2–4x the query latency. On a 50M-vector index, that’s the difference between p99 of 40 ms and p99 of 180 ms. Same shape as any caching trade-off.</p>
+
+<p>Now the part that catches every team eventually. Real queries are almost never <em>“give me the 10 closest chunks period.”</em> They’re <em>“give me the 10 closest chunks <strong>where <code class="language-plaintext highlighter-rouge">tenant_id='acme'</code> AND <code class="language-plaintext highlighter-rouge">document_type='policy'</code></strong>“</em>. That sounds harmless. Here’s what actually happens:</p>
+
+<p>The graph walk visits up to <code class="language-plaintext highlighter-rouge">efSearch</code> candidates (say 100). It doesn’t know about your filter while walking. So it visits 100 candidates — and 97 of them happen to belong to <em>other</em> tenants. After applying your filter you have 3 results. But you asked for 10. The vector DB returns those 3 silently. <strong>No error. No warning.</strong> Your <code class="language-plaintext highlighter-rouge">recall@10</code> just dropped 70% and you have no way to tell.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    Q[Query] --&gt; H[HNSW traversal]
+    H --&gt; C1((candidate))
+    H --&gt; C2((candidate))
+    H --&gt; C3((candidate))
+    H --&gt; Cn((... efSearch=100&lt;br/&gt;candidates visited))
+    C1 -. filter:&lt;br/&gt;tenant_id=X .-&gt; X1[reject]
+    C2 -. filter .-&gt; X2[reject]
+    C3 -. filter .-&gt; M1[match]
+    Cn -. filter .-&gt; X3[reject]
+    M1 --&gt; R[Return&lt;br/&gt;only 3 hits for k=10&lt;br/&gt;silently]
+
+    style R stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p>The closest relational analog: imagine an index scan that the planner stops after looking at 100 rows. Now add a <code class="language-plaintext highlighter-rouge">WHERE tenant_id='X'</code> predicate that matches 1% of rows. The scan visits 100, only 1 passes the filter, you get 1 row back. Postgres wouldn’t do this — it would either use a different index or scan more. HNSW doesn’t have those options at query time.</p>
+
+<p>The more selective the filter, the worse this gets. A filter matching &lt;0.1% of the corpus can return <em>zero</em> results when the unfiltered query would have returned plenty.</p>
+
+<p>Fixes, cheapest to most expensive:</p>
+
+<ul>
+  <li><strong>Crank <code class="language-plaintext highlighter-rouge">efSearch</code> up.</strong> Cheap; breaks down at very selective filters.</li>
+  <li><strong>Use a vector DB with proper filtered-HNSW support</strong> (Qdrant, Weaviate). Better, still imperfect.</li>
+  <li><strong>Partition the index physically by the dominant filter.</strong> If 99% of queries filter by <code class="language-plaintext highlighter-rouge">tenant_id</code>, give each tenant its own physical index. The “filter” becomes routing, the way a sharded relational DB routes by <code class="language-plaintext highlighter-rouge">tenant_id</code> to the right shard. Recall is bounded again because each shard contains only matching rows.</li>
+</ul>
+
+<h3 id="hybrid-retrieval-dense-alone-almost-never-wins">Hybrid retrieval: dense alone almost never wins</h3>
+
+<p>The single highest-leverage architectural decision: <strong>run two indexes in parallel — a vector index and a full-text (BM25) index — and merge the results.</strong></p>
+
+<p>The two have opposite failure modes:</p>
+
+<ul>
+  <li><strong>Dense (vector / embedding-based)</strong> is good at <em>meaning</em>. It matches <code class="language-plaintext highlighter-rouge">"yearly charges"</code> to a chunk about <code class="language-plaintext highlighter-rouge">"annual fees"</code> because their embeddings are close. It <em>fails</em> on exact tokens it has never seen — like the error code <code class="language-plaintext highlighter-rouge">ERR_OUTLOOK_4823</code> — because that token never appeared in pretraining and embeds to noise.</li>
+  <li><strong>Lexical (BM25)</strong> is the algorithm behind Elasticsearch / OpenSearch / Lucene. It’s an inverted index — same structure as the full-text indexes you’ve used for 20 years. Finds <code class="language-plaintext highlighter-rouge">ERR_OUTLOOK_4823</code> instantly because it’s looking for the literal string. Can’t connect <code class="language-plaintext highlighter-rouge">"yearly"</code> to <code class="language-plaintext highlighter-rouge">"annual"</code> at all.</li>
+</ul>
+
+<p>You almost certainly want both. Run the two in parallel and combine the rank orders with <strong>RRF — Reciprocal Rank Fusion</strong>.</p>
+
+<p>RRF solves a real problem: when two rankers return ranked lists with <em>non-comparable scores</em> (BM25 might return 0–30; dense returns 0–1), you can’t just add them. RRF throws away the actual scores and uses only the rank <em>position</em> of each doc in each list. For every doc, sum <code class="language-plaintext highlighter-rouge">1 / (k + rank)</code> across all rankers, with <code class="language-plaintext highlighter-rouge">k = 60</code> as the conventional constant. Docs that landed near the top of <em>both</em> lists win.</p>
+
+<p>Worked example. Suppose for one query:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Dense ranks:  [docA, docB, docC]
+BM25 ranks:   [docC, docD, docA]
+</code></pre></div></div>
+
+<p>RRF scores (with k=60):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docA: 1/(60+1)  + 1/(60+3)  = 0.0322
+docB: 1/(60+2)  + 0         = 0.0161
+docC: 1/(60+3)  + 1/(60+1)  = 0.0322
+docD: 0         + 1/(60+2)  = 0.0161
+</code></pre></div></div>
+
+<p>Final order: A and C tied at top, B and D tied below. You didn’t need to know anything about either ranker’s score distribution.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    Q[Query] --&gt; D[Dense ANN&lt;br/&gt;top-100]
+    Q --&gt; B[BM25&lt;br/&gt;top-100]
+    D --&gt; RRF[RRF fuse&lt;br/&gt;k=60]
+    B --&gt; RRF
+    RRF --&gt; M[~150 unique&lt;br/&gt;candidates]
+    M --&gt; RR[Cross-encoder&lt;br/&gt;rerank top-10]
+
+    style D fill:#fff,stroke:#1565c0
+    style B fill:#fff,stroke:#2e7d32
+    style RRF stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p>In code:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">asyncio</span>
+<span class="kn">from</span> <span class="n">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="n">K_RRF</span> <span class="o">=</span> <span class="mi">60</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">hybrid_search</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">dense</span><span class="p">,</span> <span class="n">lex</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span>
+        <span class="n">dense_index</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="nf">embed</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">),</span>
+        <span class="n">bm25_index</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">dense</span><span class="p">):</span>
+        <span class="n">scores</span><span class="p">[</span><span class="n">doc_id</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">K_RRF</span> <span class="o">+</span> <span class="n">rank</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">lex</span><span class="p">):</span>
+        <span class="n">scores</span><span class="p">[</span><span class="n">doc_id</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">K_RRF</span> <span class="o">+</span> <span class="n">rank</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nf">sorted</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">scores</span><span class="p">.</span><span class="n">get</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)[:</span><span class="n">k</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>On every real corpus I’ve measured, hybrid moves <code class="language-plaintext highlighter-rouge">recall@10</code> by 5–15 points over dense-only at essentially zero added latency (the two retrievers run in parallel; BM25 via OpenSearch / Tantivy is faster than dense ANN at this scale). Skipping the lexical leg looks like simplicity and is actually a permanent quality ceiling.</p>
+
+<h3 id="reranking-the-slow-model-that-gets-the-last-word">Reranking: the slow model that gets the last word</h3>
+
+<p>The vector search you’ve built so far is fast but only roughly accurate. It returns the 100 vectors <em>closest in space</em> to the query, but “closest in vector space” is not the same thing as “actually answers this question.” Reranking is the step where a slower, more accurate model takes that shortlist of 100 and reorders it carefully — so the few documents you send to the LLM are the genuinely best ones.</p>
+
+<p>Why is the vector search only roughly accurate? Because the vector DB is fast for a specific reason: every document’s embedding was computed once at ingest time. At query time, the model only runs on the <em>query</em>, never on the query and a candidate document together. The model never gets to look at the two side by side. It only measures whether they happen to land near each other in vector space.</p>
+
+<p>That independence is what makes vector lookups microseconds. It also puts a ceiling on quality.</p>
+
+<p>Two model architectures to keep in mind:</p>
+
+<ul>
+  <li><strong>Bi-encoder</strong> — what your vector store uses. The model runs <em>twice and separately</em>: once on the query and once on each document, producing one vector for each. Then it compares those vectors by distance. Because document vectors are computed ahead of time at ingest, query-time work is just one model run on the query plus a fast vector lookup. Microseconds per lookup.</li>
+  <li><strong>Cross-encoder</strong> — the model runs <em>once</em> with the query and a candidate document concatenated together as a single input. The output is a relevance score directly. Because the model gets to see both sides at the same time, the score is much more accurate. The price is speed: milliseconds per pair instead of microseconds per lookup, and you have to re-run for every candidate.</li>
+</ul>
+
+<p>You can’t run a cross-encoder over 50M docs per query — the math doesn’t work. But you <em>can</em> run it over the 150-candidate shortlist from hybrid retrieval. This is a classic candidate-generation-then-ranking architecture, identical in shape to how every recommender or feed system works.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    C[Corpus&lt;br/&gt;50M chunks] -. ANN .-&gt; H[Hybrid top-150]
+    H --&gt; CE[Cross-encoder&lt;br/&gt;~568M params&lt;br/&gt;~30-80ms on L4 GPU]
+    CE --&gt; T[Top-10]
+    T --&gt; L[LLM]
+
+    style C fill:#eee
+    style H fill:#fff
+    style T stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<p>50M → 150 is cheap (precomputed-vector lookups). 150 → 10 is where the expensive joint scoring lives. Doing the joint scoring over the full corpus would be ~300,000x more compute per query.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">sentence_transformers</span> <span class="kn">import</span> <span class="n">CrossEncoder</span>
+
+<span class="n">reranker</span> <span class="o">=</span> <span class="nc">CrossEncoder</span><span class="p">(</span><span class="sh">"</span><span class="s">BAAI/bge-reranker-v2-m3</span><span class="sh">"</span><span class="p">)</span>  <span class="c1"># ~568M-parameter open model
+</span>
+<span class="k">def</span> <span class="nf">retrieve_and_rerank</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="nf">hybrid_search</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>             <span class="c1"># cheap (bi-encoder ANN)
+</span>    <span class="n">pairs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">q</span><span class="p">,</span> <span class="n">c</span><span class="p">.</span><span class="n">text</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">]</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">reranker</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">pairs</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>  <span class="c1"># ~30-80ms on an L4 GPU
+</span>    <span class="n">top</span> <span class="o">=</span> <span class="nf">sorted</span><span class="p">(</span><span class="nf">zip</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">scores</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])[:</span><span class="n">top_k</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">top</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>The reranker is also where you enforce <em>diversity</em>. If the top-10 is ten near-identical paragraphs from ten different files, the user gets no new information. Two cheap fixes both work: a per-source cap (at most 2 chunks from any single document), or <strong>MMR (Maximal Marginal Relevance)</strong> — a re-ordering that penalizes a candidate for being too similar to ones already picked. Same diversity problem as any feed or search ranking system.</p>
+
+<p>Two more options worth knowing about and usually not picking first:</p>
+
+<ul>
+  <li><strong>ColBERT</strong> stores one embedding <em>per token</em> instead of per chunk. At query time, for each query token, find the most similar document token; sum across query tokens. Lands between bi-encoder and cross-encoder on quality and cost. Trade-off: ~10–20x storage for the per-token embeddings.</li>
+  <li><strong>LLM-as-reranker</strong> — feed the candidates into a small LLM and ask it to rank them. Slow, expensive, non-deterministic, and usually worse than a dedicated cross-encoder at the same latency budget. The one place it wins: when you need actual <em>reasoning</em> over candidates (“which of these is most recent and most authoritative”), not just relevance.</li>
+</ul>
+
+<h3 id="query-understanding-the-second-most-underbuilt-piece">Query understanding: the second-most-underbuilt piece</h3>
+
+<p>Users don’t write the queries documents are written <em>for</em>. They write fragments, follow-ups, and pronouns. Your retrieval pipeline has to bridge that gap <em>before</em> nearest-neighbor search has any chance of working.</p>
+
+<p>The single highest-ROI addition to a multi-turn product is <strong>query rewrite</strong> — a small, fast LLM that turns a follow-up into a self-contained search query.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    H["History:&lt;br/&gt;'what is the refund policy?'&lt;br/&gt;'how long do we have?'"] --&gt; RW[Small LLM&lt;br/&gt;rewrite ~150ms]
+    Q["'and for enterprise?'"] --&gt; RW
+    RW --&gt; O["'How long do enterprise&lt;br/&gt;customers have to request&lt;br/&gt;a refund?'"]
+    O --&gt; S[Retrieve]
+
+    style Q fill:#fff,stroke:#c62828
+    style O fill:#fff,stroke:#1565c0
+</code></pre>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">REWRITE_PROMPT</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">Rewrite the user</span><span class="sh">'</span><span class="s">s latest message into a standalone search query.
+Resolve pronouns and references using the conversation history.
+Output only the rewritten query.
+
+History:
+{history}
+
+Latest: {query}
+Rewritten:</span><span class="sh">"""</span>
+
+<span class="k">def</span> <span class="nf">rewrite</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">history</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nf">small_llm</span><span class="p">(</span><span class="n">REWRITE_PROMPT</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">history</span><span class="o">=</span><span class="n">history</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>A small model (GPT-4o-mini / Haiku / 8B-class) at ~150 ms is enough. <strong>Always log the rewrite alongside the original query.</strong> When a user complains about a bad result, the rewrite is usually where the wheels came off — and you cannot debug what you didn’t log.</p>
+
+<p>A few other techniques, in rough order of how often they earn their cost:</p>
+
+<ul>
+  <li><strong>Query decomposition</strong> — for compound questions (“compare SSO setup for Okta vs Entra ID”), split into independent sub-queries, retrieve for each, merge. Cuts down on the case where the top-k for the compound query only catches one side of the comparison.</li>
+  <li><strong>HyDE (Hypothetical Document Embeddings)</strong> — ask the LLM to draft a plausible <em>answer</em> to the query, embed that, search with it. Useful when corpus vocabulary differs sharply from how users phrase questions (legal, medical). Adds an LLM call to the critical path.</li>
+  <li><strong>Multi-query expansion</strong> — generate 3–5 paraphrases, retrieve each, RRF-fuse. Cheap, mildly helpful, easy to abuse past 5.</li>
+</ul>
+
+<h3 id="multi-tenancy-and-acls-row-level-security-in-your-vector-store">Multi-tenancy and ACLs: row-level security in your vector store</h3>
+
+<p>Production RAG never has a single user. Different users are allowed to see different documents, and the search has to respect that — exactly the same problem as <strong>row-level security</strong> in a SQL database (where every query is implicitly filtered to “rows this user is allowed to read”), just over vectors instead of rows.</p>
+
+<p>The rules saying who can read what are called <strong>ACLs (Access Control Lists)</strong>. You need to enforce them at retrieval time, not after, because if a forbidden document leaks into the prompt, the LLM will happily quote from it. Three architectures, in increasing strictness — and they map directly onto patterns you’ve seen in any multi-tenant SQL system:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 1. POST-FILTER: fetch then drop. Simple, silently broken when the
+#    accessible subset is small (over-fetch enormously or return nothing).
+</span><span class="n">hits</span> <span class="o">=</span> <span class="n">index</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">visible</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hits</span> <span class="k">if</span> <span class="n">user</span><span class="p">.</span><span class="nf">can_read</span><span class="p">(</span><span class="n">h</span><span class="p">.</span><span class="n">doc_id</span><span class="p">)][:</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="c1"># 2. PRE-FILTER: push ACL into the vector search (row-level security
+#    inside the vector DB). Correct, but subject to the recall cliff
+#    from earlier for selective filters.
+</span><span class="n">hits</span> <span class="o">=</span> <span class="n">qdrant</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span>
+    <span class="n">query_vector</span><span class="o">=</span><span class="n">v</span><span class="p">,</span>
+    <span class="n">query_filter</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">must</span><span class="sh">"</span><span class="p">:</span> <span class="p">[{</span><span class="sh">"</span><span class="s">key</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">acl_principals</span><span class="sh">"</span><span class="p">,</span>
+                            <span class="sh">"</span><span class="s">match_any</span><span class="sh">"</span><span class="p">:</span> <span class="n">user</span><span class="p">.</span><span class="nf">principal_set</span><span class="p">()}]},</span>
+    <span class="n">limit</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 3. PER-TENANT PARTITION: physically separate index per tenant.
+#    Same as sharding a SQL DB by tenant_id. Highest ops cost
+#    (you now have N indexes to manage), but the only architecture
+#    with bounded recall AND bounded latency AND clean blast-radius
+#    isolation (one tenant's index corruption can't take down others).
+</span><span class="n">tenant_index</span> <span class="o">=</span> <span class="nf">index_for</span><span class="p">(</span><span class="n">user</span><span class="p">.</span><span class="n">tenant_id</span><span class="p">)</span>
+<span class="n">hits</span> <span class="o">=</span> <span class="n">tenant_index</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div></div>
+
+<pre><code class="language-mermaid">flowchart TB
+    subgraph Post-filter
+      direction LR
+      Q1[Query] --&gt; I1[(Single index)]
+      I1 --&gt; F1[Filter after]
+      F1 --&gt; R1[may over-fetch&lt;br/&gt;or return empty]
+    end
+    subgraph Pre-filter
+      direction LR
+      Q2[Query + ACL] --&gt; I2[(Single index&lt;br/&gt;with filter)]
+      I2 --&gt; R2[recall cliff&lt;br/&gt;on selective filters]
+    end
+    subgraph Per-tenant partition
+      direction LR
+      Q3[Query] --&gt; RT{Route by&lt;br/&gt;tenant}
+      RT --&gt; T1[(Tenant A)]
+      RT --&gt; T2[(Tenant B)]
+      RT --&gt; T3[(Tenant C)]
+      T1 --&gt; R3[bounded recall&lt;br/&gt;and latency]
+    end
+
+    style R1 stroke:#c62828
+    style R2 stroke:#c62828
+    style R3 stroke:#2e7d32,stroke-width:2px
+</code></pre>
+
+<p>Pre-filter is fine when at least ~10% of the corpus is accessible to any given user. Above a few thousand tenants, or under data-residency requirements (data physically must stay in a specific region), per-tenant partitioning is the only thing that holds.</p>
+
+<p>ACLs change continuously — users join groups, docs get reshared, folders lock down. The right primitive is a worker that subscribes to permission-change events from your identity system (Active Directory, Okta) and incrementally updates each document’s allowed-users set in the index. Run a periodic full reconciler alongside it to catch missed events. Same pattern as any other <strong>CDC (Change Data Capture)</strong> pipeline — every change in an upstream source becomes an event, and a downstream worker keeps a derived store in sync. The corpus index <em>is</em> one of those derived stores: its contents are computed from upstream sources of truth and have to be kept up to date. Nothing about that is RAG-specific.</p>
+
+<h3 id="freshness-the-index-is-a-derived-table">Freshness: the index is a derived table</h3>
+
+<p>A corpus indexed nightly is fine for static knowledge bases and unusable for anything operational. The product question — <em>can a user ask about a document they edited five minutes ago?</em> — drives the whole architecture.</p>
+
+<p>Conceptually the index is a <strong>derived table</strong>: it does not own any data of its own, it is computed from somewhere else (the documents) and has to be kept in sync whenever that somewhere else changes. A SQL materialized view is the same idea. So the mechanics here are the same as any other materialized-view system.</p>
+
+<p>Every edit in the source — a database write captured by a binlog, a SharePoint webhook firing on a doc edit, an S3 object-created event — produces a <em>change event</em>. An ingest worker pool consumes those events, re-chunks the affected document, and re-embeds only the chunks whose <em>text</em> actually changed. Most edits touch a handful of chunks out of hundreds, so the work per edit stays small.</p>
+
+<p>Deletes go through as <strong>tombstones</strong> — small marker records that say “this doc id no longer exists” so the index can drop it on the next pass. A reconciler runs nightly to diff the corpus snapshot against the index and repair any gaps the event stream missed.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    S[(Source&lt;br/&gt;SharePoint /&lt;br/&gt;DB / S3)] -- CDC events --&gt; Q[(Change&lt;br/&gt;queue)]
+    Q --&gt; W[Ingest worker]
+    W --&gt; CH[Re-chunk]
+    CH --&gt; DIFF{Diff vs&lt;br/&gt;last snapshot}
+    DIFF -- added/modified --&gt; E[Embed only&lt;br/&gt;changed chunks]
+    DIFF -- deleted --&gt; TB[Tombstone]
+    E --&gt; VI[(Vector index)]
+    E --&gt; LI[(BM25 index)]
+    TB --&gt; VI
+    TB --&gt; LI
+
+    R[Reconciler&lt;br/&gt;nightly] -.full diff.-&gt; VI
+    R -.full diff.-&gt; LI
+
+    style DIFF stroke:#c62828,stroke-width:2px
+</code></pre>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="k">def</span> <span class="nf">ingest_worker</span><span class="p">(</span><span class="n">change_stream</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">change_stream</span><span class="p">:</span>   <span class="c1"># CDC, SharePoint webhook, S3 events
+</span>        <span class="k">if</span> <span class="n">event</span><span class="p">.</span><span class="nb">type</span> <span class="o">==</span> <span class="sh">"</span><span class="s">delete</span><span class="sh">"</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">vector_index</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="n">event</span><span class="p">.</span><span class="n">doc_id</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">bm25_index</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="n">event</span><span class="p">.</span><span class="n">doc_id</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">new_chunks</span> <span class="o">=</span> <span class="nf">type_aware_chunk</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">doc</span><span class="p">)</span>
+        <span class="n">old_chunks</span> <span class="o">=</span> <span class="k">await</span> <span class="n">chunk_store</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">doc_id</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="nf">chunk_diff</span><span class="p">(</span><span class="n">old_chunks</span><span class="p">,</span> <span class="n">new_chunks</span><span class="p">)</span>  <span class="c1"># only re-embed changed
+</span>
+        <span class="k">if</span> <span class="n">diff</span><span class="p">.</span><span class="n">added</span> <span class="ow">or</span> <span class="n">diff</span><span class="p">.</span><span class="n">modified</span><span class="p">:</span>
+            <span class="n">vectors</span> <span class="o">=</span> <span class="k">await</span> <span class="n">embedder</span><span class="p">.</span><span class="nf">embed_batch</span><span class="p">([</span><span class="n">c</span><span class="p">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">diff</span><span class="p">.</span><span class="n">upsert</span><span class="p">])</span>
+            <span class="k">await</span> <span class="n">vector_index</span><span class="p">.</span><span class="nf">upsert</span><span class="p">(</span><span class="n">diff</span><span class="p">.</span><span class="n">upsert</span><span class="p">,</span> <span class="n">vectors</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">bm25_index</span><span class="p">.</span><span class="nf">upsert</span><span class="p">(</span><span class="n">diff</span><span class="p">.</span><span class="n">upsert</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">diff</span><span class="p">.</span><span class="n">deleted</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">vector_index</span><span class="p">.</span><span class="nf">delete_ids</span><span class="p">(</span><span class="n">diff</span><span class="p">.</span><span class="n">deleted</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">bm25_index</span><span class="p">.</span><span class="nf">delete_ids</span><span class="p">(</span><span class="n">diff</span><span class="p">.</span><span class="n">deleted</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">chunk_store</span><span class="p">.</span><span class="nf">put</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">new_chunks</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Doing this correctly under real churn — concurrent edits to the same document inside the embed-and-index lag, bulk uploads, upstream replays of a day’s worth of events — is the same family of distributed-systems problems I wrote about in <a href="/blog/replacing-manual-pipelines-with-workers">replacing manual pipelines with workers</a> and <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">data infrastructure being the bottleneck for AI</a>. Nothing new under the sun. The corpus index is a derived table; treat it as one.</p>
+
+<h3 id="evaluation-per-stage-metrics-or-youre-flying-blind">Evaluation: per-stage metrics, or you’re flying blind</h3>
+
+<p>Most RAG systems in production are not evaluated. Teams ship, watch the support queue, react. This stops working past the demo.</p>
+
+<p>Eval has to be <strong>per-stage</strong>, because the failure modes are per-stage. A bug where retrieval fails to find the right document and a bug where the LLM was handed the right document but hallucinated anyway both look identical from a user complaint — but they live in completely different parts of the code, and you cannot fix what you cannot localize.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    Q[Query] --&gt; RET[Retrieve]
+    RET --&gt; M1[/"recall@k&lt;br/&gt;MRR&lt;br/&gt;nDCG"/]
+    RET --&gt; RR[Rerank]
+    RR --&gt; M2[/"context&lt;br/&gt;precision"/]
+    RR --&gt; LLM[LLM]
+    LLM --&gt; M3[/"faithfulness&lt;br/&gt;answer relevance"/]
+    LLM --&gt; ANS[Answer]
+    ANS --&gt; U[User]
+    U -. thumbs / clicks /&lt;br/&gt;did-rephrase .-&gt; ON[(Online signal)]
+
+    style M1 fill:#fff,stroke:#1565c0
+    style M2 fill:#fff,stroke:#1565c0
+    style M3 fill:#fff,stroke:#1565c0
+    style ON fill:#fff,stroke:#c62828
+</code></pre>
+
+<p>Retrieval metrics first. They don’t need an LLM and run offline against a labeled set of <code class="language-plaintext highlighter-rouge">(query, [correct_doc_ids])</code> pairs:</p>
+
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">recall@k</code></strong> — fraction of queries where at least one correct doc made it into the top-k. The single most important number. Track <code class="language-plaintext highlighter-rouge">k=5</code>, <code class="language-plaintext highlighter-rouge">k=10</code>, <code class="language-plaintext highlighter-rouge">k=50</code>.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">MRR</code> (Mean Reciprocal Rank)</strong> — average of <code class="language-plaintext highlighter-rouge">1/rank</code> of the first correct doc, over all queries. Captures whether correct docs are <em>near the top</em>, not just present. Correct doc at rank 1 contributes 1.0; at rank 5 contributes 0.2; not in top-k at all contributes 0.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">nDCG@k</code> (Normalized Discounted Cumulative Gain)</strong> — generalizes MRR to graded relevance (“doc A is very relevant, doc B is somewhat”) and multiple correct docs per query. Standard in IR; useful with richer labels than yes/no.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">recall_at_k</span><span class="p">(</span><span class="n">retrieved</span><span class="p">,</span> <span class="n">relevant</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nf">int</span><span class="p">(</span><span class="nf">bool</span><span class="p">(</span><span class="nf">set</span><span class="p">(</span><span class="n">retrieved</span><span class="p">[:</span><span class="n">k</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nf">set</span><span class="p">(</span><span class="n">relevant</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">mrr</span><span class="p">(</span><span class="n">retrieved</span><span class="p">,</span> <span class="n">relevant</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">retrieved</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">relevant</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">i</span>
+    <span class="k">return</span> <span class="mf">0.0</span>
+
+<span class="k">def</span> <span class="nf">eval_retriever</span><span class="p">(</span><span class="n">retriever</span><span class="p">,</span> <span class="n">labeled</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[{</span><span class="sh">"</span><span class="s">r5</span><span class="sh">"</span><span class="p">:</span>  <span class="nf">recall_at_k</span><span class="p">(</span><span class="n">r</span> <span class="p">:</span><span class="o">=</span> <span class="nf">retriever</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="n">rel</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+             <span class="sh">"</span><span class="s">r10</span><span class="sh">"</span><span class="p">:</span> <span class="nf">recall_at_k</span><span class="p">(</span><span class="n">r</span><span class="p">,</span>           <span class="n">rel</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+             <span class="sh">"</span><span class="s">mrr</span><span class="sh">"</span><span class="p">:</span> <span class="nf">mrr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">rel</span><span class="p">)}</span>
+            <span class="k">for</span> <span class="n">q</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">labeled</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nf">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
+</code></pre></div></div>
+
+<p>End-to-end metrics use an <strong>LLM-as-judge</strong>: a strong model that scores each <code class="language-plaintext highlighter-rouge">(query, retrieved context, final answer)</code> triple against a rubric. The three to implement:</p>
+
+<ul>
+  <li><strong>Context precision</strong> — of the chunks you retrieved, what fraction were actually relevant? Catches “we retrieved 10 docs but 8 were noise.”</li>
+  <li><strong>Faithfulness</strong> — of the claims in the answer, what fraction are supported by the retrieved context? Catches hallucination directly.</li>
+  <li><strong>Answer relevance</strong> — does the answer address the question, regardless of correctness? Catches off-topic answers.</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">ragas</code> and <code class="language-plaintext highlighter-rouge">trulens</code> libraries implement all three with reasonable defaults. Generic LLM judges agree with humans ~70–80% of the time; domain-tuned ones hit 90%+. You’ll want to tune the rubric prompts.</p>
+
+<p>The labeled set itself is the hard problem. Pragmatic path:</p>
+
+<ol>
+  <li><strong>Hand-write 50–100 queries</strong> with the answers you’d expect, with product, support, and domain experts.</li>
+  <li><strong>Mine logs.</strong> For every session with positive feedback (thumbs-up, user clicked a citation, user did <em>not</em> rephrase their question), capture the query and the chunks the user implicitly endorsed.</li>
+  <li><strong>Expand with an offline LLM judge</strong> to thousands of graded <code class="language-plaintext highlighter-rouge">(query, doc)</code> pairs.</li>
+  <li><strong>Audit a stratified sample by hand quarterly</strong> (some easy queries, some hard, some across each document type) and use the human judgments to calibrate how much you should trust the LLM judge.</li>
+</ol>
+
+<p>Pair offline metrics with one or two online signals — thumbs, citation-click rate, did-the-user-rephrase rate — and alert if any of them drift week-over-week. Same SRE shape as any other production system.</p>
+
+<h3 id="the-generation-step-briefly">The generation step, briefly</h3>
+
+<p>By the time the LLM gets the prompt, you’ve already decided how well it can possibly do.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PROMPT</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">Answer the question using only the numbered sources below.
+Cite sources inline as [1], [2], etc.
+If the sources do not contain enough information to answer, say so and do not guess.
+
+Sources:
+{sources}
+
+Question: {question}
+Answer:</span><span class="sh">"""</span>
+
+<span class="k">def</span> <span class="nf">build_prompt</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">chunks</span><span class="p">):</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="sh">"</span><span class="se">\n\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">[</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s">] (</span><span class="si">{</span><span class="n">c</span><span class="p">.</span><span class="n">source_id</span><span class="si">}</span><span class="s">) </span><span class="si">{</span><span class="n">c</span><span class="p">.</span><span class="n">text</span><span class="si">}</span><span class="sh">"</span>
+                          <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">chunks</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">PROMPT</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">question</span><span class="o">=</span><span class="n">question</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Things worth getting right at this stage:</p>
+
+<ul>
+  <li><strong>Cap context well below the model’s max.</strong> Frontier models claim 128k–200k context windows, but quality collapses long before that. The “lost in the middle” effect is real: when you stuff a long context into the prompt, the model reliably attends to information at the start and the end but loses information in the middle. 4–12k tokens of well-ranked context beats 50k tokens of marginal context.</li>
+  <li><strong>Tell the model to refuse on insufficient context.</strong> That one sentence in the prompt is the difference between a system that occasionally hallucinates and one that often does.</li>
+  <li><strong>Stream the answer; buffer the citations</strong> until generation is complete, so citation IDs don’t get rewritten as the model revises mid-stream.</li>
+</ul>
+
+<p>Model choice within a generation of the frontier is mostly a cost-and-latency decision. The day you swap GPT-4o-mini for Haiku 4.5, the retrieval pipeline barely notices.</p>
+
+<h3 id="putting-it-all-together">Putting it all together</h3>
+
+<pre><code class="language-mermaid">flowchart LR
+    subgraph Ingest
+      S[(Sources&lt;br/&gt;SharePoint, Confluence,&lt;br/&gt;Git, S3, DBs)] --&gt; CDC[Change feed&lt;br/&gt;workers]
+      CDC --&gt; EX[Extract &amp;amp;&lt;br/&gt;type-aware chunk]
+      EX --&gt; EMB[Embed&lt;br/&gt;incrementally]
+      EMB --&gt; VI[(Vector index&lt;br/&gt;HNSW / per-tenant)]
+      EX --&gt; LI[(Lexical index&lt;br/&gt;BM25)]
+      CDC --&gt; ACL[ACL projection]
+      ACL --&gt; VI
+      ACL --&gt; LI
+    end
+    subgraph Query
+      Q[User query +&lt;br/&gt;conversation] --&gt; QR[Query rewrite /&lt;br/&gt;decompose]
+      QR --&gt; DR[Dense retrieve&lt;br/&gt;top-100]
+      QR --&gt; BR[BM25 retrieve&lt;br/&gt;top-100]
+      DR --&gt; F[RRF fuse]
+      BR --&gt; F
+      F --&gt; RR[Cross-encoder&lt;br/&gt;rerank top-10]
+      RR --&gt; G[LLM with&lt;br/&gt;cited context]
+      G --&gt; U[User]
+      U -. feedback .-&gt; EVAL[(Eval store)]
+      EVAL -. weekly .-&gt; QR
+      EVAL -. weekly .-&gt; EMB
+    end
+</code></pre>
+
+<p>Notice how much of the architecture is retrieval and how little is the LLM. The LLM is one box on the right; everything else is the system deciding what gets sent to it.</p>
+
+<h3 id="closing-thought">Closing thought</h3>
+
+<p>The framing that RAG is an “AI” technique has done the field a disservice. RAG is an <strong>information-retrieval system with an LLM bolted onto the output</strong>, and the information-retrieval discipline is fifty years old — it has well-understood eval methodology and has solved most of the hard problems at least once. Teams that ship good RAG products recognize this and staff accordingly: search engineers, data engineers, infra engineers, with one or two people on prompting and the model.</p>
+
+<p>Teams that struggle treat the whole thing as a prompting problem and keep swapping models hoping the next one fixes retrieval. It will not. The model cannot answer from documents it never received, cannot cite documents it never saw, cannot refuse based on context it was never given. Every one of those failures is upstream of the model, in the indexes, in the chunking, in the ACL projection, in the freshness pipeline, in the eval. That is where the work is, and that is where the durable advantage of an AI-backed product actually accumulates.</p>
+
+<p>If your RAG system isn’t behaving the way you want, the prompt is almost never the answer. Look upstream.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/what-five-nines-actually-asks-of-you">What a 99.999% availability target actually asks of you</a>
+            <small>2026-06-19</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a>
+            <small>2026-06-12</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/fairness-aware-metrics-for-gig-economy">Designing fairness-aware performance metrics for gig-economy workforces</a>
+            <small>2026-05-02</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

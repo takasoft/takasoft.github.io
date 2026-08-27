@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="TakaSoft">
+  <meta property="og:description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+  <meta property="og:url" content="https://takasoft.io/about/">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TakaSoft">
+  <meta name="twitter:description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      About - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div id="about-me" class="p-3 mb-2 bg-transparent text-dark">
+  <div class="container">
+    <h3 class="story-title">About Me</h3>
+    <hr>
+
+    <div class="row">
+      <p>
+        I'm Takao Shibamoto, a software engineer. Most of my work has been on the parts of an AI product that don't get much press — the pipelines that move data around, the control planes that keep services running, the data layers that have to keep working when volume triples overnight. That tends to be the bottleneck when enterprises try to adopt AI, and it's where I've spent most of the last seven years.
+      </p>
+      <p>
+        Currently at Microsoft, building large-scale distributed control-plane infrastructure for enterprise AI products. Before that: Amazon on last-mile delivery, Everlywell on at-home lab testing through the pandemic, and PayPal as an intern during college on corporate firewall automation.
+      </p>
+      <p>
+        I work mostly on distributed systems and data infrastructure, but I've shipped plenty outside that lane too — full-stack web apps, computer-vision projects, automation tools, and other product work. If the problem is interesting I'll figure out the stack.
+      </p>
+      <p>
+        Outside work, I enjoy traveling, music, and following the markets.
+      </p>
+    </div>
+    <br>
+
+    <div class="row">
+      <b>Selected writing:</b>
+    </div>
+    <div class="row">
+      <ul><li><a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a></li><li><a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a></li><li><a href="/blog/fairness-aware-metrics-for-gig-economy">Designing fairness-aware performance metrics for gig-economy workforces</a></li><li><a href="/blog/replacing-manual-pipelines-with-workers">From manual script to production pipeline</a></li><li><a href="/blog/why-should-we-invest-our-money">Why should we invest our money?</a></li><li><a href="/blog/5-year-reflection-as-software-engineer">5 year reflection of myself as a software engineer</a></li>
+        <li><a href="/">More on the blog &rarr;</a></li>
+      </ul>
+    </div>
+
+    <div class="row">
+      <b>Open source &amp; research:</b>
+    </div>
+    <div class="row">
+      <ul>
+        <li>
+          <b>Floe</b> &mdash; an open-source engine for building dynamic tables on Apache Iceberg. Tables are defined in Python; Floe handles the orchestration, event-driven updates, and cloud-agnostic deployment.
+          <a href="https://github.com/takasoft/floe" target="_blank">GitHub</a>.
+        </li>
+        <li>
+          <b>Primer Server</b> &mdash; a web tool I built as an undergrad in the Vollbrecht Lab at Iowa State to help biology researchers design PCR primers. Open-sourced from day one.
+          <a href="https://github.com/vollbrechtlab/primer-server" target="_blank">GitHub</a> &middot;
+          <a href="https://doi.org/10.47611/jsr.vi.454" target="_blank">paper (Journal of Student Research, 2018)</a>.
+        </li>
+      </ul>
+    </div>
+
+    <div class="row">
+      <b>Experience:</b>
+    </div>
+    <div class="row">
+      <ul>
+        <li><b>Software Engineer @ Microsoft</b> <span class="exp-dates">(2026 &ndash; present)</span> &mdash; large-scale distributed control-plane infrastructure for commercial enterprise AI products.</li>
+        <li><b>Software Engineer @ Amazon</b> <span class="exp-dates">(2021 &ndash; 2026)</span> &mdash; event-driven big-data systems behind last-mile delivery performance, at worldwide scale.</li>
+        <li><b>Software Engineer @ Everlywell</b> <span class="exp-dates">(2020 &ndash; 2021)</span> &mdash; backend systems for the lab and fulfillment operations behind at-home testing, during the pandemic.</li>
+        <li><b>Software Engineer Intern @ PayPal</b> <span class="exp-dates">(2018 &amp; 2019)</span> &mdash; Python tools and internal web applications for corporate firewall automation.</li>
+      </ul>
+    </div>
+
+    <div class="row">
+      <b>Skills:</b>
+    </div>
+    <div class="row">
+      <ul>
+        <li><b>Languages</b>: Python, Java, TypeScript, Scala, Ruby</li>
+        <li><b>Data systems</b>: SQL, NoSQL, distributed processing (Spark), ETL, BI &amp; visualization</li>
+        <li><b>Infrastructure</b>: containerization (Docker / Kubernetes), Infrastructure as Code, serverless, monitoring &amp; observability</li>
+        <li><b>Distributed systems</b>: event-driven architecture, message queues, stream processing, object storage</li>
+        <li><b>AI</b>: LLM integration (LangChain), computer vision (OpenCV), model-serving infrastructure, retrieval-augmented generation (RAG)</li>
+      </ul>
+    </div>
+
+    <div class="row">
+      <b>Education:</b>
+    </div>
+    <div class="row">
+      <ul>
+        <li><b>Iowa State University</b> &mdash; B.S. in Computer Engineering, Minor in Cyber Security</li>
+        <li>Activities: <a href="/blog/ncur-primer-server">undergraduate research</a>, <a href="/blog/icpc-na-championship">competitive programming (ICPC)</a></li>
+      </ul>
+    </div>
+
+    <div class="row">
+      <b>Online presence:</b>
+    </div>
+    <div class="row">
+      <ul>
+        <li><a href="https://www.linkedin.com/in/takao-shibamoto" target="_blank">LinkedIn</a></li>
+        <li><a href="https://github.com/takasoft" target="_blank">GitHub</a></li>
+        <li><a href="https://stackoverflow.com/users/7336605/takasoft" target="_blank">Stack Overflow</a></li>
+        <li><a href="https://leetcode.com/u/takasoft/" target="_blank">LeetCode</a></li>
+      </ul>
+    </div>
+
+    <div class="row">
+      <b>Contact:</b>
+    </div>
+    <div class="row">
+      <ul>
+        <li>takao at takasoft.io</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

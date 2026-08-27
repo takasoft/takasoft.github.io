@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="What a 99.999% availability target actually asks of you">
+  <meta property="og:description" content="“Operational excellence” is one of those phrases that has been said so many times in so many all-hands meetings that it has stopped meaning anything. It sounds like a virtue, something you achieve ...">
+  <meta property="og:url" content="https://takasoft.io/blog/what-five-nines-actually-asks-of-you">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="What a 99.999% availability target actually asks of you">
+  <meta name="twitter:description" content="“Operational excellence” is one of those phrases that has been said so many times in so many all-hands meetings that it has stopped meaning anything. It sounds like a virtue, something you achieve ...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      What a 99.999% availability target actually asks of you - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">What a 99.999% availability target actually asks of you</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2026-06-19T00:00:00+00:00">
+          2026-06-19
+        </time>
+      </span>
+    </span>
+    <p>“Operational excellence” is one of those phrases that has been said so many times in so many all-hands meetings that it has stopped meaning anything. It sounds like a virtue, something you achieve by caring a lot and trying hard. It is not. Operational excellence is a set of concrete engineering practices built on top of a few numbers, and the numbers are unforgiving. This post is about those numbers and what they actually demand, written for someone who has heard “five nines” thrown around and wants to know what it really costs.</p>
+
+<p>I work on infrastructure with high availability targets, and the thing I most wish people understood is this: you do not reach a reliability bar by being careful. You reach it by designing for it, measuring against it, and spending a budget you have agreed to in advance. Caring is necessary and nowhere near sufficient.</p>
+
+<h3 id="start-with-the-math-because-it-is-brutal">Start with the math, because it is brutal</h3>
+
+<p>Availability is usually quoted in “nines”: 99.9%, 99.99%, 99.999%. Each extra nine sounds like a small step. It is not. Here is what each one allows as total downtime, per year and per day:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Availability</th>
+      <th>Downtime per year</th>
+      <th>Downtime per day</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>99% (two nines)</td>
+      <td>~3.65 days</td>
+      <td>~14.4 minutes</td>
+    </tr>
+    <tr>
+      <td>99.9% (three nines)</td>
+      <td>~8.77 hours</td>
+      <td>~1.44 minutes</td>
+    </tr>
+    <tr>
+      <td>99.99% (four nines)</td>
+      <td>~52.6 minutes</td>
+      <td>~8.6 seconds</td>
+    </tr>
+    <tr>
+      <td>99.999% (five nines)</td>
+      <td>~5.26 minutes</td>
+      <td>~0.86 seconds</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Read the five-nines row again. Five minutes and sixteen seconds of downtime for the entire year. That is less time than it takes a human to notice an alert, open a laptop, and read a dashboard. Which means the most important consequence of the number is immediate: at four or five nines, a human cannot be in the recovery loop. If your plan for an outage is “someone gets paged and fixes it,” your floor is roughly three nines, because human response time alone burns your entire four-nines budget on a single incident.</p>
+
+<p>So the first thing the target asks of you is to design systems that detect and recover from common failures automatically, and to reserve humans for the genuinely novel. Everything else follows from that.</p>
+
+<h3 id="the-three-letters-people-confuse-sli-slo-sla">The three letters people confuse: SLI, SLO, SLA</h3>
+
+<p>You cannot manage what you do not define, and most reliability conversations go sideways because three related terms get used interchangeably. They are different things and the difference matters.</p>
+
+<ul>
+  <li>An <strong>SLI</strong> (Service Level Indicator) is a <em>measurement</em>: the actual number you observe. “Over the last 30 days, 99.97% of requests succeeded in under 200 milliseconds.” It is a fact about reality.</li>
+  <li>An <strong>SLO</strong> (Service Level Objective) is a <em>target</em>: the number you are aiming for internally. “We want 99.95% of requests to succeed in under 200 milliseconds.” It is a goal you hold yourself to.</li>
+  <li>An <strong>SLA</strong> (Service Level Agreement) is a <em>contract</em>: a promise to a customer, usually with money or credits attached if you miss it. “If availability drops below 99.9% this month, you get a 10% credit.” It is a legal and financial commitment.</li>
+</ul>
+
+<p>The relationship between them is deliberate. Your SLO should be stricter than your SLA, so that you start responding well before you breach a contractual promise. And your SLI is how you know where you stand against both. A team that says “we have an SLA” but cannot tell you their current SLI is flying blind: they have made a promise they have no way of knowing whether they are keeping.</p>
+
+<p>Choosing the SLI is itself an act of engineering judgment. “Availability” is meaningless until you define what counts as a successful request, measured from where, over what window. The same service can be “99.99% available” or “99.9% available” depending entirely on those choices, and the honest version measures from as close to the user as possible, because that is what the user actually experiences.</p>
+
+<h3 id="error-budgets-turn-reliability-into-a-decision-tool">Error budgets turn reliability into a decision tool</h3>
+
+<p>Here is the idea that makes the whole thing operable rather than aspirational. If your SLO is 99.9%, then you are explicitly allowing 0.1% unreliability. That 0.1% is not a failure. It is a <strong>budget</strong>.</p>
+
+<p>An error budget reframes reliability from a moral question into an accounting one. You have, say, 43 minutes of downtime to spend this month. Spend it however creates the most value: shipping features faster and accepting more risk, running a risky migration, doing a load test in production. The budget is permission to take risk, bounded by a number everyone agreed to.</p>
+
+<p>This solves the oldest fight in software, the one between the people who want to ship and the people who want stability. Without an error budget, that argument is a values clash with no resolution, decided by whoever has more political capital. With one, it is arithmetic. Budget remaining? Ship, take the risk. Budget exhausted? Reliability work becomes the priority until the budget recovers, automatically, no debate. The number, agreed in advance, is what makes that conversation end instead of recur.</p>
+
+<p>The corollary catches people off guard: being <em>too</em> reliable is also a problem. If you set a 99.9% SLO and consistently deliver 99.999%, you are not a hero, you are leaving velocity on the table. You spent enormous effort buying reliability nobody asked for, effort that could have gone into the product. The goal is to hit the target, not to maximize the metric.</p>
+
+<h3 id="what-the-target-forces-into-the-architecture">What the target forces into the architecture</h3>
+
+<p>Once “recover from common failures without a human, within seconds” is the design center, a set of decisions stops being optional. None of these are about trying harder. They are structural.</p>
+
+<p><strong>Redundancy with no shared fate.</strong> If one machine, rack, zone, or region failing can take you down, your ceiling is the reliability of that single thing. Real availability targets force redundancy across independent failure domains, with traffic able to move away from a sick one automatically. The hard part is the “independent”: two replicas that share a power supply, a network path, or a dependency are not redundant, they just look redundant on the diagram.</p>
+
+<p><strong>Health checks and automated failover.</strong> The system has to know it is sick and route around the sick part faster than a human could. That means real health signals (not just “the process is running” but “the process is actually serving correct responses”) wired to automated traffic management.</p>
+
+<p><strong>Graceful degradation.</strong> When a dependency fails, the question is whether the whole product dies or just one feature. A system designed for a high availability bar fails partially: it serves stale-but-valid data, disables one feature, or returns a sensible default, rather than collapsing entirely. The user notices a smaller thing.</p>
+
+<p><strong>Blast-radius control.</strong> Changes and failures both need containment. This is why mature platforms roll changes out gradually and isolate tenants and regions, so that a bad change or a bad day affects a slice, not the whole. A single global switch that can take everything down at once is incompatible with the budget.</p>
+
+<p><strong>Observability that leads the incident.</strong> You cannot recover in seconds from something you learn about in minutes. Telemetry has to be fast and trustworthy enough to drive automated decisions, which makes monitoring a first-class part of the system rather than something bolted on after. Honest telemetry is itself a serious <a href="/blog/network-telemetry-is-a-big-data-problem">data-infrastructure problem</a>, not a free side effect.</p>
+
+<h3 id="the-human-practices-that-hold-it-together">The human practices that hold it together</h3>
+
+<p>Automation handles the common cases, but the novel ones still reach people, and operational excellence is as much about how a team operates as how the system is built.</p>
+
+<p><strong>On-call that is sustainable.</strong> A rotation where the pager goes off constantly is not a sign of diligence, it is a sign of an unreliable system burning out its engineers. High alert volume is a bug. Every page should be actionable and genuinely urgent; everything else should be a ticket or, better, an automated fix.</p>
+
+<p><strong>Runbooks for the predictable.</strong> When something known goes wrong at 3am, the responder should not be reverse-engineering the system from first principles. The recovery steps for known failure modes should be written down, current, and ideally executable. The best runbook is one that has been automated out of existence.</p>
+
+<p><strong>Blameless postmortems.</strong> After an incident, the question that matters is “what about the system let this happen,” not “who typed the wrong command.” People make mistakes; that is a constant you design around, not an variable you can eliminate by assigning blame. Blameless review is not about being nice, it is about getting honest information, because in a culture that punishes the messenger, the messenger goes quiet and you lose the data you need to actually improve.</p>
+
+<p><strong>Treating reliability as a feature.</strong> This is the cultural keystone. Reliability work competes with feature work for the same engineering time, and if it always loses, the number drifts down until an outage forces a reckoning. Operationally excellent teams budget for reliability the way they budget for features, deliberately and on purpose, rather than paying for it in emergencies.</p>
+
+<h3 id="why-ai-infrastructure-inherits-the-strictest-version-of-this">Why AI infrastructure inherits the strictest version of this</h3>
+
+<p>It would be easy to think of AI systems as more forgiving than transactional ones. “It is just inference, the user can retry.” That intuition is wrong for any AI feature wired into a real workflow, which is most of them now. When the model behind an assistant stops responding, every workflow that embeds it stops too, so the blast radius is the union of everything that calls it. Many of these features sit inside a synchronous interaction where a thirty-second blip reads as “the product is broken,” not “the model was slow.”</p>
+
+<p>So AI platforms do not get an easier reliability bar, they get a harder one, the same five-nines-class expectations as the transactional systems they are increasingly embedded in. And this connects back to the thesis running through most of what I write: <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">the data infrastructure is the bottleneck for enterprise AI</a>, not the model. The model gets the headlines. Whether the platform around it stays up, recovers itself, and stays inside its budget is what decides if any of that capability is actually usable in production.</p>
+
+<h3 id="the-one-question-worth-asking">The one question worth asking</h3>
+
+<p>If you want to know how operationally mature a system really is, skip the slideware about excellence and ask one thing: <strong>what is your SLO, what is your current SLI against it, and how much error budget is left this month?</strong></p>
+
+<p>A team that can answer crisply has done the real work. The number exists, it is measured, and it drives decisions. A team that cannot is relying on care and effort, and care and effort are exactly what run out at 3am during the incident nobody designed for. Operational excellence is not how hard you try. It is whether the system is built to hold the number when no one is trying at all.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/how-https-actually-works">How HTTPS actually works, from a typed name to an encrypted connection</a>
+            <small>2026-06-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/designing-a-rate-limiter">System design interview: design a rate limiter</a>
+            <small>2026-07-11</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/network-telemetry-is-a-big-data-problem">Network telemetry is a big-data problem</a>
+            <small>2026-06-12</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/rag-in-production-is-mostly-retrieval">RAG in production is mostly retrieval, not generation</a>
+            <small>2026-05-25</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/data-infra-is-the-bottleneck-for-enterprise-ai">Data infrastructure is the bottleneck for enterprise AI, not the models</a>
+            <small>2026-05-05</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

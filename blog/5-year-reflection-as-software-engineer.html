@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="5 year reflection of myself as a software engineer">
+  <meta property="og:description" content="I’ve been working full time since 2020, and it’s been 5 years in my professional career. I’m currently a software engineer at Amazon, and before that I worked at a startup. If you count my college ...">
+  <meta property="og:url" content="https://takasoft.io/blog/5-year-reflection-as-software-engineer">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="5 year reflection of myself as a software engineer">
+  <meta name="twitter:description" content="I’ve been working full time since 2020, and it’s been 5 years in my professional career. I’m currently a software engineer at Amazon, and before that I worked at a startup. If you count my college ...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      5 year reflection of myself as a software engineer - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">5 year reflection of myself as a software engineer</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2025-01-14T00:00:00+00:00">
+          2025-01-14
+        </time>
+      </span>
+    </span>
+    <p>I’ve been working full time since 2020, and it’s been 5 years in my professional career. I’m currently a software engineer at Amazon, and before that I worked at a startup. If you count my college years, when I interned at PayPal, I’ve been involved in building software for 8 years.</p>
+
+<p>This is a personal reflection on that journey — what I learned along the way, what I’d do differently, and a few tips for anyone trying to get into the tech industry. I’ve tried to keep the technical jargon to a minimum; where I couldn’t, there’s a short glossary at the bottom.</p>
+
+<h3 id="college-era">College Era</h3>
+
+<p>I started at Iowa State University in 2017. Over the course of my degree I held both research assistant and teaching assistant positions, and worked on a number of small software projects on the side. The one I’m proudest of is <a href="https://takasoft.io/blog/ncur-primer-server">Primer Server</a> — a tool I built from the ground up to help biology researchers design experiments. I presented the research at the National Conference on Undergraduate Research and released the code publicly as open source.</p>
+
+<p>That project ended up changing my trajectory. A recruiter from PayPal reached out after seeing it, and I spent the summers of 2018 and 2019 interning in Silicon Valley. The team I joined was small and focused on a specific problem: PayPal’s network engineers were creating firewall rules by hand, which was slow and error-prone. I built a web tool that let them generate those rules through an interface, cutting the turnaround time from a few days to a few hours.</p>
+
+<p>A few reflections from college:</p>
+
+<p><strong>Take research positions if you’re an undergrad.</strong> The pay isn’t the point — building real things, learning to work independently, and having something concrete on your resume is.</p>
+
+<p><strong>Focus on business impact, not just technical correctness.</strong> My PayPal tool worked well and was being used in production, but I didn’t really understand at the time <em>why</em> it mattered to the business. That perspective came later, and I wish I had developed it earlier.</p>
+
+<p><strong>Don’t get comfortable.</strong> After my first PayPal summer I didn’t bother applying to other internships — I figured I had a good thing going. That was a mistake. Trying different companies, teams, and problem domains is how you figure out what kind of environment lets you grow.</p>
+
+<p><strong>If you’re aiming for big tech, practice coding interview problems early and often.</strong> Sites like Leetcode are full of them. Many people argue that this kind of problem-solving is unrelated to actual software engineering jobs, and they have a point — but at FAANG-level companies, the interview process expects deep proficiency in this style of thinking. Participate in competitive programming if your university offers it (<a href="https://takasoft.io/blog/icpc-na-championship">my own experience</a>).</p>
+
+<h3 id="startup-era">Startup Era</h3>
+
+<p>After graduating, I joined a startup in early 2020 — partly because I wanted to experience all three settings: academia, big company, and now startup. I commuted into the office for the first few weeks, but then the pandemic hit and the rest of my time there was fully remote. The company sold at-home lab testing kits and had gotten its start on Shark Tank. The people were unconventional, the energy was high, and the company was riding a massive growth wave through the COVID years.</p>
+
+<p>This was where I learned what production software development actually looks like. Code reviews, automated tests, deployment pipelines, system monitoring, feature flags — all the day-to-day craft that makes a team operate. Building testing frameworks in particular taught me a useful skill: how to think like someone trying to break the software. That mindset is a big part of being a good engineer.</p>
+
+<p>I grew fast at this company. I started on testing infrastructure, then moved to the backend team that powered the lab and fulfillment operations. The core systems were written in Ruby and ran on AWS. It was satisfying to keep learning and to work directly with the people whose operations my code was supporting.</p>
+
+<p>In mid-2021 recruiters started reaching out, and one of them was from Amazon. I prepped hard for the interview — I’d let my coding-problem skills get rusty, which was a lesson in itself: those skills decay quickly if you stop practicing. The interviews went well, I focused my answers on the business impact of past projects, and I ended up with an offer 70% above what I was making at the startup. Two takeaways: keep your interview skills sharp even when you’re not job-hunting, and learn to articulate the <em>impact</em> of your work, not just the technical mechanics.</p>
+
+<h3 id="amazon-era">Amazon Era</h3>
+
+<p>At Amazon I’ve worked on Last Mile — Amazon’s package delivery operations. It’s been an education in two directions: technically, I’ve learned how to build large-scale systems that serve global customers; operationally, I’ve learned how the physical mechanics of getting packages to your door actually work, and how much engineering goes into making it consistent.</p>
+
+<p>On the technical side, I’ve worked with a wide range of Amazon’s cloud services: data processing systems that handle huge volumes of delivery data, workflow orchestration tools, event-driven systems, machine learning services for computer vision tasks, and monitoring and dashboarding platforms. The unifying theme is <em>scale</em> — both in terms of how much data flows through these systems, and in how the team thinks about building features. The pattern is: launch in one geography (usually North America), make sure it works, then expand to other regions like the EU and Japan.</p>
+
+<p>A few things I’ve learned from working at this scale:</p>
+
+<p><strong>Impact is the currency.</strong> At a big tech company, your career advancement depends almost entirely on what you’ve shipped and what difference it made — the dollar amount, the number of users affected, the technical hardness of the problem. Many of the most successful engineers I know don’t work long hours; they’re just sharply focused on the things that move the needle.</p>
+
+<p><strong>Promotion is a process you have to drive yourself.</strong> I assumed for the first year that doing good work would naturally lead to promotion. It doesn’t. At big companies, promotions involve formal reviews by people outside your team, and you need an explicit case for why you should be promoted. Start working on your “promotion document” with your manager early — it forces you to track your accomplishments and notice the gaps in your record while there’s still time to fill them.</p>
+
+<p><strong>These things aren’t obvious, and no one tells you.</strong> A lot of how a career at a big tech company works is implicit. You’re given a lot of freedom, but you’re also expected to be independent — to figure out what to work on, how to make it visible, and when to push for advancement. Most engineers learn this slowly through trial and error. I wish someone had told me earlier.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>Looking back at five years: the things that mattered most were focusing on impact, getting out of my comfort zone, keeping my interview skills sharp, and thinking backwards from the goal of the work rather than forward from the technology. Start early, identify what you have and what you’re missing, and then close those gaps deliberately.</p>
+
+<p>Five years is long, but it also felt short. I hope to keep growing as an engineer. For anyone getting into this industry: learn to enjoy what you’re doing. Tech has a creative, impact-driven culture, and there’s real satisfaction in shipping things that make a difference. Stay curious and keep learning.</p>
+
+<h3 id="glossary">Glossary</h3>
+
+<ul>
+  <li><strong>AWS (Amazon Web Services)</strong> — Amazon’s cloud computing platform. Companies rent computing resources (servers, databases, storage) from AWS instead of running their own data centers.</li>
+  <li><strong>Backend / frontend</strong> — In a web application, “frontend” is the part you see and interact with in your browser; “backend” is the server-side code that handles data, business logic, and storage behind the scenes.</li>
+  <li><strong>Big data pipeline</strong> — A system that processes very large amounts of data — too large for a single computer — by splitting the work across many machines.</li>
+  <li><strong>Cloud services</strong> — Pre-built tools (databases, message queues, machine learning systems, and so on) that companies like Amazon, Microsoft, and Google rent out, so other companies don’t have to build them from scratch.</li>
+  <li><strong>DSA (Data Structures and Algorithms)</strong> — The fundamental theory of how to organize data and design efficient procedures to manipulate it. Heavily emphasized in software engineering interviews.</li>
+  <li><strong>FAANG</strong> — Originally an acronym for Facebook, Apple, Amazon, Netflix, and Google. Used informally to refer to the largest, most prestigious tech companies.</li>
+  <li><strong>Feature flag</strong> — A switch in code that lets engineers turn a new feature on or off without redeploying the software. Useful for rolling features out gradually or quickly disabling them if something goes wrong.</li>
+  <li><strong>ICPC</strong> — The International Collegiate Programming Contest, a global programming competition for university students.</li>
+  <li><strong>Leetcode</strong> — A popular website with thousands of coding interview practice problems.</li>
+  <li><strong>Machine learning (ML)</strong> — Software that learns patterns from data rather than being programmed with explicit rules. Used for things like image recognition, recommendations, and language translation.</li>
+</ul>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/engineers-exit-strategy-and-interview-playbook">The engineer's exit strategy and interview playbook</a>
+            <small>2026-06-08</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/difference-startup-big-corp-academia">How does working at a startup compare to working at a big corp or academia?</a>
+            <small>2020-12-08</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>
