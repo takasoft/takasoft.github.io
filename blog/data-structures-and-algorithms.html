@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Data structures and algorithms: A practical reference">
+  <meta property="og:description" content="A practical reference covering the core data structures and common algorithm patterns, from arrays and binary search to graph traversal and dynamic programming.">
+  <meta property="og:url" content="https://takasoft.io/blog/data-structures-and-algorithms">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Data structures and algorithms: A practical reference">
+  <meta name="twitter:description" content="A practical reference covering the core data structures and common algorithm patterns, from arrays and binary search to graph traversal and dynamic programming.">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Data structures and algorithms: A practical reference - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Data structures and algorithms: A practical reference</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2025-09-16T00:00:00+00:00">
+          2025-09-16
+        </time>
+      </span>
+    </span>
+    <p>A practical reference covering the core data structures and common algorithm patterns, from arrays and binary search to graph traversal and dynamic programming.</p>
+
+<!--more-->
+
+<p><strong>Contents:</strong> <a href="#complexity">Complexity</a> · <a href="#core-data-structures">Core structures</a> · <a href="#search-and-sorting">Search and sorting</a> · <a href="#array-patterns">Array patterns</a> · <a href="#graphs">Graphs</a> · <a href="#trees">Trees</a> · <a href="#heaps">Heaps</a> · <a href="#greedy-algorithms">Greedy algorithms</a> · <a href="#backtracking">Backtracking</a> · <a href="#dynamic-programming">Dynamic programming</a> · <a href="#combinatorics">Combinatorics</a> · <a href="#references">References</a></p>
+
+<h2 id="complexity">Complexity</h2>
+
+<p>Input constraints can suggest which algorithms are worth trying. Treat these ranges as rough clues, not hard limits or runtime guarantees.</p>
+
+<div class="table-responsive" role="region" aria-label="Input-size clues and candidate algorithm complexities" tabindex="0">
+
+  <table>
+    <thead>
+      <tr>
+        <th>Input-size clue</th>
+        <th>Candidate complexity</th>
+        <th>Typical approach</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 12</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(n!)</code></td>
+        <td>Search through permutations</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 25</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(2^n)</code></td>
+        <td>Search through subsets</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 100</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(n^4)</code></td>
+        <td>Four nested loops</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 500</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(n^3)</code></td>
+        <td>Three nested loops</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 10^4</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(n^2)</code></td>
+        <td>Compare pairs, or use a quadratic sort</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 10^6</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(n log n)</code></td>
+        <td>Efficient comparison sorting, such as merge sort</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &lt;= 10^8</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(n)</code></td>
+        <td>Scan once to find a minimum or maximum</td>
+      </tr>
+      <tr>
+        <td><code class="language-plaintext highlighter-rouge">n &gt; 10^8</code></td>
+        <td><code class="language-plaintext highlighter-rouge">O(log n)</code> or <code class="language-plaintext highlighter-rouge">O(1)</code></td>
+        <td>Binary search, or a direct formula</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<p>The subset row assumes constant work per subset. Copying all elements of every subset instead takes <code class="language-plaintext highlighter-rouge">O(n * 2^n)</code> total work.</p>
+
+<p><strong>Use the table to narrow the search, not determine the solution.</strong> For example, at <code class="language-plaintext highlighter-rouge">n = 10^5</code>, consider sorting in <code class="language-plaintext highlighter-rouge">O(n log n)</code> or a linear scan before trying every pair. The problem still decides which approach is correct. A small input does not require a slow algorithm, and a large input does not automatically imply binary search.</p>
+
+<p><strong>The <code class="language-plaintext highlighter-rouge">O(n)</code> row allows <code class="language-plaintext highlighter-rouge">n = 10^8</code> as a possibility, not a promise.</strong> Big-O describes growth, not seconds. Check the time limit, language, work per item, and memory use rather than assuming that many Python iterations will fit. For the final row, <code class="language-plaintext highlighter-rouge">n</code> may describe a number or search range. Reading <code class="language-plaintext highlighter-rouge">n</code> separate input items already takes linear work.</p>
+
+<p>Unless stated otherwise, the bounds below treat fixed-size arithmetic as constant time. Python’s arbitrary-size integers cost more as their digit counts grow.</p>
+
+<h2 id="core-data-structures">Core data structures</h2>
+
+<p>Choose a structure based on the operations you need, not just what it stores.</p>
+
+<div class="table-responsive" role="region" aria-label="Core data structures and Python implementations" tabindex="0">
+
+  <table>
+    <thead>
+      <tr>
+        <th>Structure</th>
+        <th>Python implementation</th>
+        <th>Strength</th>
+        <th>Cost or limitation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Dynamic array</td>
+        <td><code class="language-plaintext highlighter-rouge">list</code></td>
+        <td>Index access in <code class="language-plaintext highlighter-rouge">O(1)</code>, append in amortized <code class="language-plaintext highlighter-rouge">O(1)</code></td>
+        <td>Insert or remove near the front in <code class="language-plaintext highlighter-rouge">O(n)</code></td>
+      </tr>
+      <tr>
+        <td>Linked list</td>
+        <td>Custom node class</td>
+        <td>Insert or remove in <code class="language-plaintext highlighter-rouge">O(1)</code> when the required node links are already known</td>
+        <td>Finding an item or index takes <code class="language-plaintext highlighter-rouge">O(n)</code>, with extra pointer storage</td>
+      </tr>
+      <tr>
+        <td>Hash map</td>
+        <td><code class="language-plaintext highlighter-rouge">dict</code></td>
+        <td>Key lookup, insertion, and deletion in expected <code class="language-plaintext highlighter-rouge">O(1)</code></td>
+        <td>Hashing, slot checks, key comparisons, and extra memory</td>
+      </tr>
+      <tr>
+        <td>Hash set</td>
+        <td><code class="language-plaintext highlighter-rouge">set</code></td>
+        <td>Membership, insertion, and deletion in expected <code class="language-plaintext highlighter-rouge">O(1)</code></td>
+        <td>Same hash-table overhead, with no positional indexing</td>
+      </tr>
+      <tr>
+        <td>Stack</td>
+        <td><code class="language-plaintext highlighter-rouge">list.append()</code> and <code class="language-plaintext highlighter-rouge">list.pop()</code></td>
+        <td>Last in, first out</td>
+        <td>Amortized <code class="language-plaintext highlighter-rouge">O(1)</code> push and pop, <code class="language-plaintext highlighter-rouge">O(n)</code> search</td>
+      </tr>
+      <tr>
+        <td>Queue</td>
+        <td><code class="language-plaintext highlighter-rouge">collections.deque</code>, with <code class="language-plaintext highlighter-rouge">append()</code> and <code class="language-plaintext highlighter-rouge">popleft()</code></td>
+        <td>First in, first out</td>
+        <td><code class="language-plaintext highlighter-rouge">O(1)</code> enqueue and dequeue, <code class="language-plaintext highlighter-rouge">O(n)</code> middle access</td>
+      </tr>
+      <tr>
+        <td>Binary heap</td>
+        <td><code class="language-plaintext highlighter-rouge">heapq</code> over a <code class="language-plaintext highlighter-rouge">list</code> (min-heap by default)</td>
+        <td>Repeatedly retrieve the smallest or largest priority</td>
+        <td><code class="language-plaintext highlighter-rouge">O(1)</code> peek, <code class="language-plaintext highlighter-rouge">O(log n)</code> push and pop, <code class="language-plaintext highlighter-rouge">O(n)</code> arbitrary search</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<p>Python lists are arrays of references, not linked lists. Repeatedly using <code class="language-plaintext highlighter-rouge">pop(0)</code> to process a queue shifts the remaining elements and can turn a linear traversal into quadratic work.</p>
+
+<p>For a singly linked list, deleting a node usually requires its predecessor. A doubly linked list stores both directions but uses more memory. Neither gives constant-time access to the middle.</p>
+
+<p>A stack is a natural fit for undo history, bracket matching, and iterative depth-first search. A queue fits work waiting to be processed and breadth-first search. A dictionary fits counts, caches, and mapping an item to its last position.</p>
+
+<h2 id="search-and-sorting">Search and sorting</h2>
+
+<h3 id="binary-search">Binary search</h3>
+
+<p>Binary search repeatedly discards half of a sorted search range. Keep a precise invariant instead of guessing how to move the endpoints.</p>
+
+<p>This version finds the first index whose value is at least the target. Its search interval is half-open, <code class="language-plaintext highlighter-rouge">[left, right)</code>, and it returns the list length if every value is smaller.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">lower_bound</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nf">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+        <span class="n">middle</span> <span class="o">=</span> <span class="p">(</span><span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">values</span><span class="p">[</span><span class="n">middle</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">middle</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="n">middle</span>
+    <span class="k">return</span> <span class="n">left</span>
+</code></pre></div></div>
+
+<p>It takes <code class="language-plaintext highlighter-rouge">O(log n)</code> comparisons and <code class="language-plaintext highlighter-rouge">O(1)</code> extra space. The input must already be sorted.</p>
+
+<p><strong>Using Python’s <code class="language-plaintext highlighter-rouge">bisect</code>.</strong> <code class="language-plaintext highlighter-rouge">bisect_left(values, target)</code> returns the first position whose value is at least the target, just like <code class="language-plaintext highlighter-rouge">lower_bound</code> above. <code class="language-plaintext highlighter-rouge">bisect_right(values, target)</code> returns the first position whose value is greater than the target. Both return <code class="language-plaintext highlighter-rouge">len(values)</code> if no such position exists, and neither changes the list.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">bisect</span> <span class="kn">import</span> <span class="n">bisect_left</span><span class="p">,</span> <span class="n">bisect_right</span><span class="p">,</span> <span class="n">insort</span>
+
+<span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">12</span><span class="p">]</span>
+<span class="n">target</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">left</span> <span class="o">=</span> <span class="nf">bisect_left</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="n">right</span> <span class="o">=</span> <span class="nf">bisect_right</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="n">index</span> <span class="o">=</span> <span class="n">left</span> <span class="k">if</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="ow">and</span> <span class="n">values</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">==</span> <span class="n">target</span> <span class="k">else</span> <span class="bp">None</span>
+<span class="n">count</span> <span class="o">=</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span>
+
+<span class="nf">insort</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Here <code class="language-plaintext highlighter-rouge">left = 1</code>, <code class="language-plaintext highlighter-rouge">right = 3</code>, <code class="language-plaintext highlighter-rouge">index = 1</code>, and <code class="language-plaintext highlighter-rouge">count = 2</code>. The matching values occupy <code class="language-plaintext highlighter-rouge">[left, right)</code>. If the target is absent, both boundaries are the same, <code class="language-plaintext highlighter-rouge">count</code> is zero, and <code class="language-plaintext highlighter-rouge">index</code> is <code class="language-plaintext highlighter-rouge">None</code>. Check the boundary and equality before treating an insertion position as a match.</p>
+
+<p><code class="language-plaintext highlighter-rouge">insort(values, 4)</code> inserts in place, leaving <code class="language-plaintext highlighter-rouge">[1, 3, 3, 4, 5, 8, 12]</code>. By default, <code class="language-plaintext highlighter-rouge">insort</code> inserts after existing equal values. Use <code class="language-plaintext highlighter-rouge">insort_left</code> to insert before them. Finding a boundary takes <code class="language-plaintext highlighter-rouge">O(log n)</code> comparisons, but insertion takes <code class="language-plaintext highlighter-rouge">O(n)</code> overall because the list may need to shift elements.</p>
+
+<p>The same pattern can search a monotonic condition, such as whether a proposed capacity is large enough. It does not work when the condition flips unpredictably between true and false.</p>
+
+<p><strong>Binary search narrows the interval.</strong> For <code class="language-plaintext highlighter-rouge">[1, 3, 3, 5, 8, 12]</code> and target <code class="language-plaintext highlighter-rouge">3</code>, the first match is at index <code class="language-plaintext highlighter-rouge">1</code>, not index <code class="language-plaintext highlighter-rouge">2</code>. All indices are zero-based.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: Lower bound search for 3
+    accDescr: The half-open interval shrinks from zero through six to zero through three, then zero through one. Since the value at index zero is smaller than three, left becomes one and the search ends.
+    A["Range [0, 6)&lt;br/&gt;middle = 3, value = 5"]
+    B["Range [0, 3)&lt;br/&gt;middle = 1, value = 3"]
+    C["Range [0, 1)&lt;br/&gt;middle = 0, value = 1"]
+    D["left = right = 1&lt;br/&gt;Return index 1"]
+    A --&gt;|"5 &gt;= 3: right = 3"| B
+    B --&gt;|"3 &gt;= 3: right = 1"| C
+    C --&gt;|"1 &lt; 3: left = 1"| D
+</code></pre>
+
+<h3 id="sorting">Sorting</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Algorithm</th>
+      <th>Time</th>
+      <th>Main point</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Insertion sort</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n^2)</code> worst case, <code class="language-plaintext highlighter-rouge">O(n)</code> on already sorted input</td>
+      <td>Simple and useful for small or nearly sorted runs</td>
+    </tr>
+    <tr>
+      <td>Merge sort</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n log n)</code></td>
+      <td>Predictable runtime and stable ordering, usually with <code class="language-plaintext highlighter-rouge">O(n)</code> extra storage</td>
+    </tr>
+    <tr>
+      <td>Quicksort</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n log n)</code> average, <code class="language-plaintext highlighter-rouge">O(n^2)</code> worst case</td>
+      <td>Pivot choice matters</td>
+    </tr>
+    <tr>
+      <td>Heapsort</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n log n)</code> worst case</td>
+      <td>Can sort in place without a linear auxiliary buffer</td>
+    </tr>
+    <tr>
+      <td>Python’s built-in sort</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n log n)</code> worst case</td>
+      <td>Stable and adaptive to existing ordered runs</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Stability means equal keys retain their original order. Use <code class="language-plaintext highlighter-rouge">sorted(values)</code> for a new list or <code class="language-plaintext highlighter-rouge">values.sort()</code> to modify a list. In application code, prefer those maintained implementations.</p>
+
+<p>For understanding divide and conquer, this merge sort splits the input, sorts each half, and merges the two ordered results:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">merge_sort</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nf">list</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">middle</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="nf">merge_sort</span><span class="p">(</span><span class="n">values</span><span class="p">[:</span><span class="n">middle</span><span class="p">])</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="nf">merge_sort</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">middle</span><span class="p">:])</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">right</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">left</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+            <span class="n">merged</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">merged</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">right</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">merged</span><span class="p">.</span><span class="nf">extend</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="n">i</span><span class="p">:])</span>
+    <span class="n">merged</span><span class="p">.</span><span class="nf">extend</span><span class="p">(</span><span class="n">right</span><span class="p">[</span><span class="n">j</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="n">merged</span>
+</code></pre></div></div>
+
+<p>Taking from the left on equality preserves stability. This implementation uses <code class="language-plaintext highlighter-rouge">O(n)</code> peak auxiliary storage, including its slices and merged lists.</p>
+
+<p><strong>Merge sort splits, then combines.</strong> Single-element lists are already sorted. Each merge compares the next unused value from its two inputs.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: Splitting and merging four values
+    accDescr: Split four, one, three, two into pairs and then single values. Merge four and one into one, four. Merge three and two into two, three. The final merge produces one, two, three, four.
+    A["[4, 1, 3, 2]"] --&gt; B["[4, 1]"]
+    A --&gt; C["[3, 2]"]
+    B --&gt; D["[4]"]
+    B --&gt; E["[1]"]
+    C --&gt; F["[3]"]
+    C --&gt; G["[2]"]
+    D --&gt; H["[1, 4]"]
+    E --&gt; H
+    F --&gt; I["[2, 3]"]
+    G --&gt; I
+    H --&gt; J["[1, 2, 3, 4]"]
+    I --&gt; J
+</code></pre>
+
+<h2 id="array-patterns">Array patterns</h2>
+
+<p><strong>Two pointers</strong> can avoid comparing every pair when the input has useful order. In a sorted array, if the sum of the smallest and largest remaining values is too small, move the left pointer right. If it is too large, move the right pointer left.</p>
+
+<p><strong>Sliding windows</strong> maintain information about a contiguous range while moving its endpoints. The example below finds the length of the longest substring without repeated characters. Each endpoint only moves forward.</p>
+
+<p><strong>Prefix sums</strong> trade preprocessing and storage for fast range queries. Store a leading zero, then each running total. The sum over the half-open range <code class="language-plaintext highlighter-rouge">[left, right)</code> is <code class="language-plaintext highlighter-rouge">prefix[right] - prefix[left]</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">two_sum_sorted</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nf">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">+</span> <span class="n">values</span><span class="p">[</span><span class="n">right</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">left</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">right</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="bp">None</span>
+
+
+<span class="k">def</span> <span class="nf">longest_unique_substring</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">last_seen</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">best</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">right</span><span class="p">,</span> <span class="n">character</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">character</span> <span class="ow">in</span> <span class="n">last_seen</span><span class="p">:</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">last_seen</span><span class="p">[</span><span class="n">character</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">last_seen</span><span class="p">[</span><span class="n">character</span><span class="p">]</span> <span class="o">=</span> <span class="n">right</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">best</span><span class="p">,</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">best</span>
+
+
+<span class="k">def</span> <span class="nf">prefix_sums</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+        <span class="n">prefix</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">prefix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">prefix</span>
+</code></pre></div></div>
+
+<p>Two-sum here takes <code class="language-plaintext highlighter-rouge">O(n)</code> time and <code class="language-plaintext highlighter-rouge">O(1)</code> extra space, returning two distinct indices or <code class="language-plaintext highlighter-rouge">None</code>. The substring algorithm takes expected <code class="language-plaintext highlighter-rouge">O(n)</code> time and up to <code class="language-plaintext highlighter-rouge">O(n)</code> dictionary space. Prefix sums take <code class="language-plaintext highlighter-rouge">O(n)</code> preprocessing time and space, followed by <code class="language-plaintext highlighter-rouge">O(1)</code> queries for valid endpoints.</p>
+
+<p>A sliding window is not a universal replacement for nested loops. For example, moving one endpoint based on a running sum may rely on all values being nonnegative. Negative values can break that reasoning.</p>
+
+<p><strong>Prefix sums remove the part before the range.</strong> The query <code class="language-plaintext highlighter-rouge">[1, 3)</code> includes indices <code class="language-plaintext highlighter-rouge">1</code> and <code class="language-plaintext highlighter-rouge">2</code>, so its answer is <code class="language-plaintext highlighter-rouge">4 + 1 = 5</code>. Subtracting the two prefix totals gives the same result.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: A range sum from two prefix totals
+    accDescr: Values two, four, one, three produce prefix totals zero, two, six, seven, ten. The sum over indices one through two is prefix three minus prefix one, or seven minus two, which is five.
+    V["Values: 2, 4, 1, 3"] --&gt; P["Prefix totals: 0, 2, 6, 7, 10"]
+    P --&gt; R["prefix[3] = 7"]
+    P --&gt; L["prefix[1] = 2"]
+    R --&gt; S["Range sum = 7 - 2 = 5"]
+    L --&gt; S
+</code></pre>
+
+<h2 id="graphs">Graphs</h2>
+
+<p>The Python examples are self-contained within each section. Directed graph edges <code class="language-plaintext highlighter-rouge">(u, v)</code> point from <strong>u to v</strong>. In topological sorting, that means <strong>u must come before v</strong>.</p>
+
+<h3 id="topological-sorting">Topological sorting</h3>
+
+<p>A topological order puts each vertex before all vertices it points to. It exists only for a directed acyclic graph, or DAG. Vertices here are integers from <code class="language-plaintext highlighter-rouge">0</code> through <code class="language-plaintext highlighter-rouge">n - 1</code>.</p>
+
+<p><strong>Dependencies form a partial order.</strong> Here <code class="language-plaintext highlighter-rouge">0</code> must precede both <code class="language-plaintext highlighter-rouge">1</code> and <code class="language-plaintext highlighter-rouge">2</code>, and both must precede <code class="language-plaintext highlighter-rouge">3</code>. The orders <code class="language-plaintext highlighter-rouge">[0, 1, 2, 3]</code> and <code class="language-plaintext highlighter-rouge">[0, 2, 1, 3]</code> are both valid.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: A dependency graph with two valid orders
+    accDescr: Vertex zero points to vertices one and two. Vertices one and two both point to vertex three. There is no edge ordering one relative to two.
+    A(("0")) --&gt; B(("1"))
+    A --&gt; C(("2"))
+    B --&gt; D(("3"))
+    C --&gt; D
+</code></pre>
+
+<p>Both implementations use this helper to build adjacency lists and count incoming edges:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">build_graph</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The vertex count must be nonnegative.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="n">indegree</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">An edge contains an out-of-range vertex.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">].</span><span class="nf">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">indegree</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">adjacency</span><span class="p">,</span> <span class="n">indegree</span>
+</code></pre></div></div>
+
+<p><strong>Depth-first search (DFS).</strong> Visit a vertex’s outgoing neighbors before adding it to the result. That produces reverse topological order, so reverse the list at the end. Three states distinguish an unseen vertex, a vertex on the active recursion path, and a finished vertex. An edge back to an active vertex reveals a cycle.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">topological_sort_dfs</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+    <span class="n">adjacency</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">build_graph</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">postorder</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The graph contains a directed cycle.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">state</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="nf">visit</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">state</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">postorder</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nf">visit</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">postorder</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p><strong>Kahn’s algorithm.</strong> Put every vertex with zero incoming edges into a queue. Remove one, append it to the order, and decrement its neighbors’ incoming-edge counts. If fewer than <code class="language-plaintext highlighter-rouge">n</code> vertices are processed, a cycle remains.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+
+
+<span class="k">def</span> <span class="nf">topological_sort_kahn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+    <span class="n">adjacency</span><span class="p">,</span> <span class="n">indegree</span> <span class="o">=</span> <span class="nf">build_graph</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">)</span>
+    <span class="n">ready</span> <span class="o">=</span> <span class="nf">deque</span><span class="p">(</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">indegree</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">while</span> <span class="n">ready</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">ready</span><span class="p">.</span><span class="nf">popleft</span><span class="p">()</span>
+        <span class="n">order</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">indegree</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">indegree</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ready</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The graph contains a directed cycle.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">order</span>
+</code></pre></div></div>
+
+<p>Both take <code class="language-plaintext highlighter-rouge">O(V + E)</code> time and <code class="language-plaintext highlighter-rouge">O(V + E)</code> total space, including the graph. They handle disconnected graphs and return <code class="language-plaintext highlighter-rouge">[]</code> for an empty graph. Cycles raise an error rather than returning a misleading order. Multiple valid orders may exist. For long dependency chains, prefer Kahn’s algorithm to avoid Python’s recursion limit.</p>
+
+<h3 id="breadth-first-and-depth-first-traversal">Breadth-first and depth-first traversal</h3>
+
+<p>Breadth-first search (BFS) visits vertices in layers. In an unweighted graph, the first visit gives the shortest distance in number of edges. Depth-first search (DFS) follows a path before backtracking and is useful for reachability and structural checks.</p>
+
+<p>In the dependency diagram above, BFS from <code class="language-plaintext highlighter-rouge">0</code> reaches <code class="language-plaintext highlighter-rouge">1</code> and <code class="language-plaintext highlighter-rouge">2</code> at distance <strong>1 edge</strong>, then <code class="language-plaintext highlighter-rouge">3</code> at distance <strong>2 edges</strong>. DFS explores one branch before the other. Traversal order and topological order answer different questions, even when they happen to agree on a small example.</p>
+
+<p>These versions use the earlier <code class="language-plaintext highlighter-rouge">build_graph</code> helper. They follow directed edges. For an undirected graph, include both <code class="language-plaintext highlighter-rouge">(u, v)</code> and <code class="language-plaintext highlighter-rouge">(v, u)</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">shortest_unweighted_paths</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+    <span class="n">adjacency</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">build_graph</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The start vertex is out of range.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">distance</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">queue</span> <span class="o">=</span> <span class="nf">deque</span><span class="p">([</span><span class="n">start</span><span class="p">])</span>
+    <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">queue</span><span class="p">.</span><span class="nf">popleft</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">distance</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">distance</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">parent</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span>
+                <span class="n">queue</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">distance</span><span class="p">,</span> <span class="n">parent</span>
+
+
+<span class="k">def</span> <span class="nf">depth_first_order</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+    <span class="n">adjacency</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">build_graph</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The start vertex is out of range.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">visited</span> <span class="o">=</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span><span class="p">]</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">stack</span><span class="p">.</span><span class="nf">pop</span><span class="p">()</span>
+        <span class="n">order</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="n">visited</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="n">stack</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">order</span>
+</code></pre></div></div>
+
+<p>Both take <code class="language-plaintext highlighter-rouge">O(V + E)</code> time including graph construction. Marking vertices when queued or stacked avoids repeatedly adding the same vertex. BFS returns <code class="language-plaintext highlighter-rouge">-1</code> for unreachable vertices. Following its parent pointers back from a reachable target reconstructs a shortest path. This iterative DFS gives a reachability order, not the finishing times needed by the topological-sort implementation.</p>
+
+<h3 id="shortest-paths-with-weights">Shortest paths with weights</h3>
+
+<p>BFS minimizes edge count, not total weight. For nonnegative edge weights, use Dijkstra’s algorithm: repeatedly expand the smallest known distance and relax its outgoing edges.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">heapq</span> <span class="kn">import</span> <span class="n">heappop</span><span class="p">,</span> <span class="n">heappush</span>
+<span class="kn">from</span> <span class="n">math</span> <span class="kn">import</span> <span class="n">inf</span><span class="p">,</span> <span class="n">isfinite</span>
+
+
+<span class="k">def</span> <span class="nf">dijkstra</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The start vertex is out of range.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">An edge contains an out-of-range vertex.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weight</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nf">isfinite</span><span class="p">(</span><span class="n">weight</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Dijkstra requires finite, nonnegative weights.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">].</span><span class="nf">append</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="p">))</span>
+
+    <span class="n">distance</span> <span class="o">=</span> <span class="p">[</span><span class="n">inf</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">distance</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">queue</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">start</span><span class="p">)]</span>
+    <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+        <span class="n">cost</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="nf">heappop</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cost</span> <span class="o">!=</span> <span class="n">distance</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="n">cost</span> <span class="o">+</span> <span class="n">weight</span>
+            <span class="k">if</span> <span class="n">candidate</span> <span class="o">&lt;</span> <span class="n">distance</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+                <span class="n">distance</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">candidate</span>
+                <span class="nf">heappush</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">distance</span>
+</code></pre></div></div>
+
+<p>The heap may hold an older, worse distance for a vertex. Skipping those stale entries is essential. Unreachable vertices keep infinity. This version uses <code class="language-plaintext highlighter-rouge">O(V + E)</code> space and <code class="language-plaintext highlighter-rouge">O((V + E) log(V + E))</code> time with its potentially repeated heap entries.</p>
+
+<p>Dijkstra is not valid for negative weights. Bellman-Ford handles negative edges in <code class="language-plaintext highlighter-rouge">O(VE)</code> time and can detect a reachable negative cycle. Floyd-Warshall finds all-pairs distances in <code class="language-plaintext highlighter-rouge">O(V^3)</code> time and <code class="language-plaintext highlighter-rouge">O(V^2)</code> space. Choose based on the graph size and the question being asked.</p>
+
+<p><strong>Fewest edges is not always lowest cost.</strong> Edge labels below are costs in arbitrary units. BFS prefers the one-edge route from <code class="language-plaintext highlighter-rouge">0</code> to <code class="language-plaintext highlighter-rouge">1</code>, but Dijkstra finds <code class="language-plaintext highlighter-rouge">0 → 2 → 1</code> with total cost <code class="language-plaintext highlighter-rouge">2</code>, rather than <code class="language-plaintext highlighter-rouge">5</code>.</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    accTitle: Weighted paths from zero to one
+    accDescr: The direct edge from zero to one costs five units. Going from zero to two and then to one costs one plus one, or two units, despite using more edges.
+    A(("0")) --&gt;|"5"| B(("1"))
+    A --&gt;|"1"| C(("2"))
+    C --&gt;|"1"| B
+</code></pre>
+
+<h3 id="union-find">Union-find</h3>
+
+<p>Union-find tracks which items belong to the same connected component. It is useful when components are repeatedly joined and queried, such as in Kruskal’s minimum spanning tree algorithm.</p>
+
+<p>This version uses <strong>union by size</strong>, attaching the smaller component to the larger one. Path compression shortens future searches for a component’s representative.</p>
+
+<p><strong>Shorten a parent chain.</strong> Arrows inside each box point from an item to its parent, not along the original graph’s edges. In this four-item component, <code class="language-plaintext highlighter-rouge">find(0)</code> skips parent <code class="language-plaintext highlighter-rouge">1</code> and points <code class="language-plaintext highlighter-rouge">0</code> directly at representative <code class="language-plaintext highlighter-rouge">3</code>. Component membership does not change.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: Union-find before and after finding zero
+    accDescr: Before the lookup, zero points to one, one points to representative three, and two points to three. After finding zero, zero also points directly to three.
+    subgraph Before["Before find(0)"]
+        direction BT
+        B0["0"] --&gt; B1["1"] --&gt; B3["3: representative"]
+        B2["2"] --&gt; B3
+    end
+    subgraph After["After find(0)"]
+        direction BT
+        A0["0"] --&gt; A3["3: representative"]
+        A1["1"] --&gt; A3
+        A2["2"] --&gt; A3
+    end
+    Before --&gt;|"find(0)"| After
+</code></pre>
+
+<p>In Kruskal’s algorithm, sort an undirected graph’s edges by weight and accept an edge only when it joins different components. This builds a minimum spanning tree, or a minimum spanning forest if the graph is disconnected, in <code class="language-plaintext highlighter-rouge">O(E log E)</code> time dominated by sorting. A minimum spanning tree minimizes the total connecting-edge weight, not the distance from one source to every vertex.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">UnionFind</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The item count must be nonnegative.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">parent</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+
+    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The item index is out of range.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">!=</span> <span class="n">u</span><span class="p">:</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]]</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">u</span>
+
+    <span class="k">def</span> <span class="nf">union</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">self</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="o">==</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">size</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">self</span><span class="p">.</span><span class="n">size</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+            <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">,</span> <span class="n">u</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">parent</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">size</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">+=</span> <span class="n">self</span><span class="p">.</span><span class="n">size</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">find(u) == find(v)</code> tests connectivity. <code class="language-plaintext highlighter-rouge">union</code> returns whether two separate components were joined. Only a representative’s <code class="language-plaintext highlighter-rouge">size</code> entry is current.</p>
+
+<p>Initialization takes <code class="language-plaintext highlighter-rouge">O(n)</code> time and space. With both optimizations, operations take amortized <code class="language-plaintext highlighter-rouge">O(alpha(n))</code> time over a sequence, where <code class="language-plaintext highlighter-rouge">alpha</code> is the very slowly growing inverse Ackermann function. This is effectively near-constant for practical inputs, not a claim that every individual call takes constant time. See the <a href="/blog/why-union-find-is-such-a-cool-algorithm">longer union-find explanation</a>.</p>
+
+<h2 id="trees">Trees</h2>
+
+<h3 id="binary-search-trees-and-tries">Binary search trees and tries</h3>
+
+<p>A binary search tree maintains an ordering rule: smaller keys go to one side and larger keys to the other, with an explicit policy for duplicates. Inorder traversal produces sorted keys. Search, insertion, and deletion take <code class="language-plaintext highlighter-rouge">O(h)</code> for height <code class="language-plaintext highlighter-rouge">h</code>. A balanced tree keeps <code class="language-plaintext highlighter-rouge">h = O(log n)</code>, while a chain-shaped tree can have <code class="language-plaintext highlighter-rouge">h = O(n)</code>.</p>
+
+<p>For binary-tree traversal, <strong>preorder</strong> visits the root before its children, <strong>inorder</strong> visits left subtree, root, then right subtree, and <strong>postorder</strong> visits children before the root. Each visits every node in <code class="language-plaintext highlighter-rouge">O(n)</code> time. Recursive depth-first traversal uses <code class="language-plaintext highlighter-rouge">O(h)</code> stack space. A queue-based level-order traversal instead needs space proportional to the tree’s widest level.</p>
+
+<p>A trie stores keys along paths, often one character per edge. Searching or inserting a word of length <code class="language-plaintext highlighter-rouge">L</code> takes <code class="language-plaintext highlighter-rouge">O(L)</code> child lookups. It is useful for prefix queries, but the many nodes and child maps can use much more memory than a hash set. Constant-time child lookup assumes a suitable array or an expected constant-time hash map.</p>
+
+<h3 id="lowest-common-ancestor">Lowest common ancestor</h3>
+
+<p>The lowest common ancestor of two nodes is the deepest node whose subtree contains both. A node counts as its own ancestor.</p>
+
+<p><strong>A shared subtree identifies the ancestor.</strong> For targets <code class="language-plaintext highlighter-rouge">1</code> and <code class="language-plaintext highlighter-rouge">3</code>, the answer is <code class="language-plaintext highlighter-rouge">2</code>, not <code class="language-plaintext highlighter-rouge">4</code>. This example is also a binary search tree, with inorder traversal <code class="language-plaintext highlighter-rouge">[1, 2, 3, 4, 6]</code>.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: Lowest common ancestor of one and three
+    accDescr: Root four has children two and six. Node two has children one and three, so two is their lowest common ancestor.
+    A["4"] --&gt; B["2: lowest common ancestor"]
+    A --&gt; C["6"]
+    B --&gt; D["1: target"]
+    B --&gt; E["3: target"]
+</code></pre>
+
+<p>The following code works on a binary tree, not necessarily a binary search tree. It compares node identity rather than stored values, so duplicate values are fine. Two bits record whether each target has been found. The first subtree containing both targets supplies the answer.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TreeNode</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+
+
+<span class="k">def</span> <span class="nf">lowest_common_ancestor</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+    <span class="n">answer</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="k">nonlocal</span> <span class="n">answer</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="nf">visit</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">left</span><span class="p">)</span> <span class="o">|</span> <span class="nf">visit</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">right</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">found</span> <span class="o">|=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="n">q</span><span class="p">:</span>
+            <span class="n">found</span> <span class="o">|=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">found</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">answer</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="k">return</span> <span class="n">found</span>
+
+    <span class="nf">visit</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">answer</span>
+</code></pre></div></div>
+
+<p>If either target is absent, the result is <code class="language-plaintext highlighter-rouge">None</code>. If <code class="language-plaintext highlighter-rouge">p</code> and <code class="language-plaintext highlighter-rouge">q</code> are the same node and it is in the tree, that node is returned. The traversal takes <code class="language-plaintext highlighter-rouge">O(n)</code> time and <code class="language-plaintext highlighter-rouge">O(h)</code> recursion space for tree height <code class="language-plaintext highlighter-rouge">h</code>. A highly unbalanced tree can exceed Python’s recursion limit, so use an iterative traversal for that case.</p>
+
+<h2 id="heaps">Heaps</h2>
+
+<p>A binary min-heap keeps its smallest value at the root. It is not a fully sorted list, so finding an arbitrary value is still linear.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operation</th>
+      <th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Read the minimum, <code class="language-plaintext highlighter-rouge">heap[0]</code></td>
+      <td><code class="language-plaintext highlighter-rouge">O(1)</code></td>
+    </tr>
+    <tr>
+      <td>Insert, <code class="language-plaintext highlighter-rouge">heappush</code></td>
+      <td><code class="language-plaintext highlighter-rouge">O(log n)</code></td>
+    </tr>
+    <tr>
+      <td>Remove the minimum, <code class="language-plaintext highlighter-rouge">heappop</code></td>
+      <td><code class="language-plaintext highlighter-rouge">O(log n)</code></td>
+    </tr>
+    <tr>
+      <td>Search for an arbitrary value</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n)</code></td>
+    </tr>
+    <tr>
+      <td>Build by inserting <code class="language-plaintext highlighter-rouge">n</code> items individually</td>
+      <td><code class="language-plaintext highlighter-rouge">O(n log n)</code> worst case</td>
+    </tr>
+    <tr>
+      <td>Build from an existing list with <code class="language-plaintext highlighter-rouge">heapify</code></td>
+      <td><code class="language-plaintext highlighter-rouge">O(n)</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Bottom-up heap construction is linear because most nodes are close to the leaves and need little or no downward movement.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">heapq</span> <span class="kn">import</span> <span class="n">heapify</span><span class="p">,</span> <span class="n">heappop</span><span class="p">,</span> <span class="n">heappush</span>
+
+<span class="n">heap</span> <span class="o">=</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="nf">heapify</span><span class="p">(</span><span class="n">heap</span><span class="p">)</span>
+<span class="nf">heappush</span><span class="p">(</span><span class="n">heap</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">minimum</span> <span class="o">=</span> <span class="nf">heappop</span><span class="p">(</span><span class="n">heap</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">minimum</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="k">assert</span> <span class="n">heap</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+</code></pre></div></div>
+
+<p><strong>The heap is only locally ordered.</strong> Just before <code class="language-plaintext highlighter-rouge">heappop</code> in this example, the array is <code class="language-plaintext highlighter-rouge">[1, 3, 4, 7]</code>. Every parent is no larger than its children. The left subtree can still contain values larger than a value in the right subtree.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: A min-heap before removing its root
+    accDescr: The minimum value one is at the root, with children three and four. Seven is a child of three. Removing the root returns one.
+    A["1: minimum"] --&gt; B["3"]
+    A --&gt; C["4"]
+    B --&gt; D["7"]
+</code></pre>
+
+<p>Check for an empty heap before reading or removing its minimum. The <code class="language-plaintext highlighter-rouge">O(log n)</code> removal bound applies to the root, not to finding and deleting any requested value. Python’s <code class="language-plaintext highlighter-rouge">heapq</code> does not provide an indexed arbitrary-delete operation.</p>
+
+<h2 id="greedy-algorithms">Greedy algorithms</h2>
+
+<p>A greedy algorithm makes a local choice and never revisits it. The important part is proving that this choice cannot prevent an optimal answer.</p>
+
+<p>To select the largest number of non-overlapping, positive-length intervals, take the interval that finishes earliest, then repeat with compatible intervals. Choosing the earliest finish leaves at least as much room for what follows as choosing any later finish.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">select_intervals</span><span class="p">(</span><span class="n">intervals</span><span class="p">):</span>
+    <span class="n">ordered</span> <span class="o">=</span> <span class="nf">sorted</span><span class="p">(</span><span class="n">intervals</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">interval</span><span class="p">:</span> <span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">selected</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">end</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Intervals must have positive length.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">selected</span> <span class="ow">or</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">selected</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">selected</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">selected</span>
+</code></pre></div></div>
+
+<p>Sorting dominates at <code class="language-plaintext highlighter-rouge">O(n log n)</code> time, with <code class="language-plaintext highlighter-rouge">O(n)</code> space here. Endpoints may touch. This maximizes the count, not a sum of rewards. Weighted interval scheduling needs a different approach.</p>
+
+<h2 id="backtracking">Backtracking</h2>
+
+<p>Backtracking explores a choice, recurses, and then undoes that choice. Use it when the answer space is manageable or when constraints let you prune large parts of the search.</p>
+
+<p>This generator enumerates subsets by choosing which position comes next:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">subsets</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+    <span class="n">chosen</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">chosen</span><span class="p">.</span><span class="nf">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nf">len</span><span class="p">(</span><span class="n">values</span><span class="p">)):</span>
+            <span class="n">chosen</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+            <span class="k">yield</span> <span class="k">from</span> <span class="nf">visit</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">chosen</span><span class="p">.</span><span class="nf">pop</span><span class="p">()</span>
+
+    <span class="k">yield</span> <span class="k">from</span> <span class="nf">visit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Copying the current choice prevents later mutations from changing an already yielded result. There are <code class="language-plaintext highlighter-rouge">2^n</code> subsets and <code class="language-plaintext highlighter-rouge">O(n * 2^n)</code> total work to copy them. The recursion and current choice use <code class="language-plaintext highlighter-rouge">O(n)</code> auxiliary space, excluding results retained by the caller. Positions are distinct, so duplicate input values can produce equal-looking subsets.</p>
+
+<p><strong>A small subset search tree.</strong> For input <code class="language-plaintext highlighter-rouge">["A", "B"]</code>, the generator yields <code class="language-plaintext highlighter-rouge">[]</code>, <code class="language-plaintext highlighter-rouge">["A"]</code>, <code class="language-plaintext highlighter-rouge">["A", "B"]</code>, then <code class="language-plaintext highlighter-rouge">["B"]</code>. Returning from a child undoes its last choice before exploring another branch.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: Backtracking through the subsets of A and B
+    accDescr: The empty choice branches to A and B. The A branch can also choose B, yielding A and B together. After returning from that branch, choices are undone before exploring B alone.
+    E["[]"] --&gt;|"Choose A"| A["[A]"]
+    A --&gt;|"Choose B"| AB["[A, B]"]
+    E --&gt;|"Choose B"| B["[B]"]
+</code></pre>
+
+<h2 id="dynamic-programming">Dynamic programming</h2>
+
+<p>Dynamic programming reuses answers to overlapping subproblems. Define the state, transition, base case, and evaluation order before writing the loops.</p>
+
+<p>For unlimited use of positive integer coin denominations, let <code class="language-plaintext highlighter-rouge">best[t]</code> be the fewest coins needed to make total <code class="language-plaintext highlighter-rouge">t</code>. The transition tries each possible last coin. <code class="language-plaintext highlighter-rouge">best[0] = 0</code>, and totals are evaluated from small to large.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">minimum_coins</span><span class="p">(</span><span class="n">coins</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+    <span class="n">coins</span> <span class="o">=</span> <span class="nf">tuple</span><span class="p">(</span><span class="n">coins</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">amount</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">amount</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The amount must be a nonnegative integer.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nf">any</span><span class="p">(</span><span class="ow">not</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">coin</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">coin</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">coin</span> <span class="ow">in</span> <span class="n">coins</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Coin denominations must be positive integers.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">coins</span> <span class="o">=</span> <span class="nf">sorted</span><span class="p">(</span><span class="nf">set</span><span class="p">(</span><span class="n">coins</span><span class="p">))</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="p">[</span><span class="n">amount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">amount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">best</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">total</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">amount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">coin</span> <span class="ow">in</span> <span class="n">coins</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">coin</span> <span class="o">&gt;</span> <span class="n">total</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">best</span><span class="p">[</span><span class="n">total</span><span class="p">]</span> <span class="o">=</span> <span class="nf">min</span><span class="p">(</span><span class="n">best</span><span class="p">[</span><span class="n">total</span><span class="p">],</span> <span class="n">best</span><span class="p">[</span><span class="n">total</span> <span class="o">-</span> <span class="n">coin</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">None</span> <span class="k">if</span> <span class="n">best</span><span class="p">[</span><span class="n">amount</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">amount</span> <span class="k">else</span> <span class="n">best</span><span class="p">[</span><span class="n">amount</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>For <code class="language-plaintext highlighter-rouge">k</code> distinct denominations and target <code class="language-plaintext highlighter-rouge">A</code>, the table takes <code class="language-plaintext highlighter-rouge">O(Ak)</code> time and <code class="language-plaintext highlighter-rouge">O(A)</code> space, after sorting the coins. This is pseudo-polynomial: runtime depends on the numeric amount, not just the number of digits used to write it. <code class="language-plaintext highlighter-rouge">None</code> means the target cannot be formed.</p>
+
+<p>Greedily taking the largest coin does not always work. With denominations <code class="language-plaintext highlighter-rouge">1, 3, 4</code>, amount <code class="language-plaintext highlighter-rouge">6</code> needs two threes, not <code class="language-plaintext highlighter-rouge">4 + 1 + 1</code>. Top-down memoization is another way to express the same recurrence, but an iterative table avoids recursion-depth limits.</p>
+
+<p><strong>Reuse three smaller answers.</strong> To compute <code class="language-plaintext highlighter-rouge">best[6]</code>, try each possible last coin. Each arrow adds one coin to an already solved total. The middle choice gives the fewest coins.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    accTitle: Dynamic programming for a total of six
+    accDescr: With coin denominations one, three, and four, best five is two coins, best three is one coin, and best two is two coins. Adding the last coin gives candidates three, two, and three coins. The minimum is two.
+    A["best[5]&lt;br/&gt;2 coins"] --&gt;|"Add coin 1"| D["3 coins"]
+    B["best[3]&lt;br/&gt;1 coin"] --&gt;|"Add coin 3"| E["2 coins"]
+    C["best[2]&lt;br/&gt;2 coins"] --&gt;|"Add coin 4"| F["3 coins"]
+    D --&gt; G["best[6]&lt;br/&gt;2 coins"]
+    E --&gt; G
+    F --&gt; G
+</code></pre>
+
+<h2 id="combinatorics">Combinatorics</h2>
+
+<h3 id="permutations-combinations-and-pascals-triangle">Permutations, combinations, and Pascal’s triangle</h3>
+
+<p>For <code class="language-plaintext highlighter-rouge">0 &lt;= r &lt;= n</code>, the number of ordered selections is <code class="language-plaintext highlighter-rouge">P(n, r) = n! / (n - r)!</code>. The number of unordered selections is <code class="language-plaintext highlighter-rouge">C(n, r) = n! / (r! * (n - r)!)</code>.</p>
+
+<p>Python’s <code class="language-plaintext highlighter-rouge">math.perm(n, r)</code> and <code class="language-plaintext highlighter-rouge">math.comb(n, r)</code> compute these exactly. Do not assume that <code class="language-plaintext highlighter-rouge">math.comb</code> costs constant time or that it must explicitly calculate three factorials.</p>
+
+<p>Row <code class="language-plaintext highlighter-rouge">n</code> of Pascal’s triangle is <code class="language-plaintext highlighter-rouge">C(n, 0)</code> through <code class="language-plaintext highlighter-rouge">C(n, n)</code>, using zero-based row numbers. Rebuilding every preceding row takes <code class="language-plaintext highlighter-rouge">O(n^2)</code> additions. To generate just one row, use the recurrence <code class="language-plaintext highlighter-rouge">C(n, k + 1) = C(n, k) * (n - k) / (k + 1)</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">pascal_row</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">The row index must be nonnegative.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">row</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">row</span>
+
+
+<span class="k">assert</span> <span class="nf">pascal_row</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>This uses <code class="language-plaintext highlighter-rouge">O(n)</code> arithmetic steps and stores <code class="language-plaintext highlighter-rouge">n + 1</code> integers. It is not linear in bit operations or bytes, because the coefficients themselves grow with <code class="language-plaintext highlighter-rouge">n</code>.</p>
+
+<h3 id="many-combination-queries-modulo-a-prime">Many combination queries modulo a prime</h3>
+
+<p>For repeated queries, precompute factorials and inverse factorials modulo a fixed prime. An inverse lets multiplication undo a nonzero factor under modular arithmetic.</p>
+
+<p>The table below uses the prime <code class="language-plaintext highlighter-rouge">1,000,000,007</code> and requires <code class="language-plaintext highlighter-rouge">limit</code> to be smaller than that prime. At or above the prime, the factorial becomes zero modulo the prime and has no inverse. This method cannot be used unchanged for those inputs.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">make_comb_mod</span><span class="p">(</span><span class="n">limit</span><span class="p">):</span>
+    <span class="n">modulus</span> <span class="o">=</span> <span class="mi">1_000_000_007</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">limit</span> <span class="o">&lt;</span> <span class="n">modulus</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Require 0 &lt;= limit &lt; 1,000,000,007.</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">factorial</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">limit</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">limit</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">factorial</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">factorial</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">i</span> <span class="o">%</span> <span class="n">modulus</span>
+
+    <span class="n">inverse_factorial</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">limit</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">inverse_factorial</span><span class="p">[</span><span class="n">limit</span><span class="p">]</span> <span class="o">=</span> <span class="nf">pow</span><span class="p">(</span><span class="n">factorial</span><span class="p">[</span><span class="n">limit</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">modulus</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">limit</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">inverse_factorial</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">inverse_factorial</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">i</span> <span class="o">%</span> <span class="n">modulus</span>
+
+    <span class="k">def</span> <span class="nf">comb_mod</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">limit</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Require 0 &lt;= r &lt;= n &lt;= the table limit.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="nf">return </span><span class="p">(</span>
+            <span class="n">factorial</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">*</span> <span class="n">inverse_factorial</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">*</span> <span class="n">inverse_factorial</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="n">r</span><span class="p">]</span>
+            <span class="o">%</span> <span class="n">modulus</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">comb_mod</span>
+
+
+<span class="n">comb_mod</span> <span class="o">=</span> <span class="nf">make_comb_mod</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nf">comb_mod</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+</code></pre></div></div>
+
+<p>Preprocessing uses <code class="language-plaintext highlighter-rouge">O(limit)</code> table work plus one modular inverse, and <code class="language-plaintext highlighter-rouge">O(limit)</code> space. Each query then uses a constant number of modular multiplications for this fixed modulus. The returned number is the combination count modulo the prime, not the full exact count.</p>
+
+<h2 id="references">References</h2>
+
+<ol>
+  <li><span id="reference-1"></span><a href="https://codeforces.com/blog/entry/21344">Codeforces: How to determine the solution of a problem by looking at its constraints?</a>. Input-size guidelines, example approaches, and discussion of their limits.</li>
+</ol>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/why-union-find-is-such-a-cool-algorithm">Why union find is such a cool algorithm</a>
+            <small>2025-02-06</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/icpc-na-championship">Competed at ICPC North America Championship</a>
+            <small>2020-02-26</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

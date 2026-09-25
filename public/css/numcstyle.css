@@ -1,0 +1,19 @@
+.divResults{
+  border:1px solid #000;
+  font-family:inherit;
+  height:300px;
+  overflow:auto;
+}
+.ulResults{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.liResults{
+  line-height:25px;
+  padding:0 10px;
+  overflow-wrap:anywhere;
+}
+.liResults:nth-child(even){
+  background:#ccc;
+}

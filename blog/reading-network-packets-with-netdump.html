@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Reading network packets with netdump">
+  <meta property="og:description" content="A packet capture turns networking from an abstract diagram into bytes you can inspect. This tutorial develops netdump, a small C program that reads Ethernet frames and explains the IPv4, ARP, TCP, ...">
+  <meta property="og:url" content="https://takasoft.io/blog/reading-network-packets-with-netdump">
+  <meta property="og:image" content="https://takasoft.io/public/assets/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Reading network packets with netdump">
+  <meta name="twitter:description" content="A packet capture turns networking from an abstract diagram into bytes you can inspect. This tutorial develops netdump, a small C program that reads Ethernet frames and explains the IPv4, ARP, TCP, ...">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/og-default.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Reading network packets with netdump - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Reading network packets with netdump</h1>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2019-11-11T00:00:00+00:00">
+          2019-11-11
+        </time>
+      </span>
+    </span>
+    <p>A packet capture turns networking from an abstract diagram into bytes you can inspect. This tutorial develops netdump, a small C program that reads Ethernet frames and explains the IPv4, ARP, TCP, UDP, and ICMP headers inside them.</p>
+
+<!--more-->
+
+<p><strong>Contents:</strong> <a href="#a-packet-is-a-set-of-nested-headers">Layers</a> · <a href="#ethernet-and-arp">Ethernet and ARP</a> · <a href="#ipv4-addresses-lengths-and-fragments">IPv4</a> · <a href="#tcp-udp-and-icmp">TCP, UDP, and ICMP</a> · <a href="#what-a-capture-can-and-cannot-tell-you">Capture limits</a> · <a href="#build-and-run">Build and run</a> · <a href="#complete-code">Complete code</a> · <a href="#reading-the-output">Walkthrough</a></p>
+
+<h2 id="a-packet-is-a-set-of-nested-headers">A packet is a set of nested headers</h2>
+
+<p>Think of the layers as matryoshka dolls. An Ethernet frame contains an IP packet, which contains a transport segment, which carries application bytes. Each outer layer adds its own header around what it carries.</p>
+
+<p><img src="/public/assets/netdump-nested-layers.svg" alt="Nested Ethernet, IPv4, TCP, and application layers, with header sizes in bytes" /></p>
+
+<p>This diagram shows a typical TCP connection over IPv4 and Ethernet. The nested boxes show what contains what, not the relative number of bytes. Ethernet padding and its frame check sequence are omitted.</p>
+
+<p>Each layer answers a different question:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>Main question</th>
+      <th>Relevant fields</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Ethernet</td>
+      <td>Where does this frame go on this link?</td>
+      <td>Source and destination MAC addresses, EtherType</td>
+    </tr>
+    <tr>
+      <td>IPv4</td>
+      <td>Which hosts are communicating across networks?</td>
+      <td>Source and destination IP addresses, protocol, total length, TTL</td>
+    </tr>
+    <tr>
+      <td>TCP or UDP</td>
+      <td>Which transport endpoints are communicating?</td>
+      <td>Source and destination ports</td>
+    </tr>
+    <tr>
+      <td>Application</td>
+      <td>What do those endpoints mean to each other?</td>
+      <td>DNS messages, HTTP requests, encrypted records, or another format</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Encapsulation means one layer carries another layer’s bytes. It does not mean every packet contains every layer. ARP travels directly inside an Ethernet frame, and ICMP is carried by IP without TCP or UDP.</p>
+
+<p>Multi-byte integer fields in these protocols use network byte order, with the most significant byte first. Bytes <code class="language-plaintext highlighter-rouge">00 50</code> therefore represent port 80. The implementation reads fields byte by byte instead of casting packet memory to C structs. That avoids alignment assumptions, compiler-dependent bitfield layouts, and host-endianness mistakes.</p>
+
+<h2 id="ethernet-and-arp">Ethernet and ARP</h2>
+
+<p>An Ethernet II header starts with a six-byte destination MAC address, followed by a six-byte source address and a two-byte EtherType. A destination of <code class="language-plaintext highlighter-rouge">ff:ff:ff:ff:ff:ff</code> is a broadcast. Checking the source address instead would count the wrong thing.</p>
+
+<p>EtherType <code class="language-plaintext highlighter-rouge">0x0800</code> means IPv4, <code class="language-plaintext highlighter-rouge">0x0806</code> means ARP, and <code class="language-plaintext highlighter-rouge">0x86dd</code> means IPv6. VLAN tags add bytes before the network-layer payload. The decoder recognizes the <code class="language-plaintext highlighter-rouge">0x8100</code> and <code class="language-plaintext highlighter-rouge">0x88a8</code> tag types and advances over each complete tag instead of assuming IP always starts at byte 14.</p>
+
+<p>ARP resolves an IPv4 address to a link-layer address on the local network. A request asks which device has an address, and a reply supplies the mapping. For a destination outside the local subnet, the host normally resolves its next-hop router, not the remote Internet server’s MAC address.</p>
+
+<p>The code decodes the common Ethernet/IPv4 ARP format. It checks the hardware type, protocol type, and address lengths before reading the sender and target addresses. Other ARP formats are reported as unsupported.</p>
+
+<h2 id="ipv4-addresses-lengths-and-fragments">IPv4: Addresses, lengths, and fragments</h2>
+
+<p>The first IPv4 byte contains a four-bit version and a four-bit Internet Header Length, or IHL. IHL counts 32-bit words, so a value of 5 means a 20-byte header. Options can make that header longer.</p>
+
+<p>The <strong>total length</strong> includes the IPv4 header and its payload. It does not include the Ethernet header or Ethernet padding. The protocol field identifies what follows, such as ICMP (<code class="language-plaintext highlighter-rouge">1</code>), TCP (<code class="language-plaintext highlighter-rouge">6</code>), or UDP (<code class="language-plaintext highlighter-rouge">17</code>). Time to live, or TTL, limits how many routing hops a packet can survive.</p>
+
+<p>IPv4 can fragment a datagram. Later fragments do not start with a TCP or UDP header. Even the first fragment may contain only part of a transport message. This decoder reports fragmentation and skips transport decoding for every fragmented datagram rather than pretending to reassemble it.</p>
+
+<p>The two capture lengths also matter. libpcap supplies <code class="language-plaintext highlighter-rouge">caplen</code>, the number of bytes actually available, and <code class="language-plaintext highlighter-rouge">len</code>, the original frame length reported by the capture source. A parser must never read beyond <code class="language-plaintext highlighter-rouge">caplen</code>. A short capture is not permission to trust the packet’s internal length fields.</p>
+
+<h2 id="tcp-udp-and-icmp">TCP, UDP, and ICMP</h2>
+
+<p><strong>TCP</strong> provides a reliable, ordered byte stream. Sequence numbers identify positions in that stream, acknowledgements report progress, and flags such as SYN, ACK, and FIN control the connection. The header’s data-offset field, like IPv4 IHL, is measured in 32-bit words. TCP options mean the payload does not always begin after 20 bytes.</p>
+
+<p>One TCP segment is not necessarily one application message. An HTTP request can span segments, and one segment can contain bytes from multiple application writes. Packet-by-packet printing is not stream reassembly.</p>
+
+<p><strong>UDP</strong> carries individual datagrams. Its eight-byte header contains the two ports, a length covering the UDP header and data, and a checksum. UDP itself does not promise delivery, ordering, or retries. Applications can implement additional behavior above it.</p>
+
+<p><strong>ICMP</strong> carries control and diagnostic messages. Echo request and echo reply are familiar from <code class="language-plaintext highlighter-rouge">ping</code>, but other types report conditions such as an unreachable destination or an expired TTL. Only echo messages are decoded here as having an echo identifier and sequence number.</p>
+
+<p>A port is a clue, not proof of an application protocol. Port 53 commonly carries DNS, 80 HTTP, and 443 TLS over TCP or QUIC over UDP. The program labels these as <strong>port hints</strong>. It does not claim to validate application messages or decrypt HTTPS.</p>
+
+<h2 id="what-a-capture-can-and-cannot-tell-you">What a capture can and cannot tell you</h2>
+
+<p>Capture only traffic on systems and networks where you have permission. Packet payloads can contain private data and credentials. Use synthetic examples or a controlled lab, and do not publish captures without reviewing them.</p>
+
+<p>On a switched network, a normal capture does not reveal every other device’s unicast traffic. Promiscuous mode is not a way around the switch’s forwarding behavior. This program leaves promiscuous mode off.</p>
+
+<p>The program requires Ethernet captures. Linux’s <code class="language-plaintext highlighter-rouge">any</code> interface often produces a cooked-capture link type instead, which this implementation rejects explicitly. Raw Wi-Fi, loopback-specific formats, and IPv6 need different decoders.</p>
+
+<p>Checksums are printed but not verified. Hardware offloading can also make a host-side capture differ from the frames ultimately placed on the wire. Fragment reassembly, TCP stream reconstruction, retransmission analysis, and TLS decryption are outside this tutorial. Use Wireshark or tcpdump for broader protocol support.</p>
+
+<h2 id="build-and-run">Build and run</h2>
+
+<p>The implementation targets Linux with a C11 compiler and libpcap. Save the complete code below as <code class="language-plaintext highlighter-rouge">netdump.c</code>.</p>
+
+<p>On Ubuntu or Debian:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt-get update
+<span class="nb">sudo </span>apt-get <span class="nb">install </span>gcc libc6-dev libpcap-dev
+cc <span class="nt">-std</span><span class="o">=</span>c11 <span class="nt">-Wall</span> <span class="nt">-Wextra</span> <span class="nt">-Werror</span> netdump.c <span class="nt">-lpcap</span> <span class="nt">-o</span> netdump
+</code></pre></div></div>
+
+<p>Start with an Ethernet-format capture file that you are authorized to inspect. Offline analysis does not require capture privileges:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./netdump <span class="nt">-r</span> lab.pcap
+./netdump <span class="nt">-r</span> lab.pcap <span class="s1">'tcp port 80'</span>
+</code></pre></div></div>
+
+<p>For a live capture, select a real interface from your own machine. <code class="language-plaintext highlighter-rouge">eth0</code> is only an example:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ip <span class="nb">link
+sudo</span> ./netdump <span class="nt">-i</span> eth0 <span class="s1">'arp or ip'</span>
+</code></pre></div></div>
+
+<p>Press Ctrl+C to stop and print the summary. The signal handler only requests that libpcap stop. Printing, statistics, and cleanup happen after the capture loop returns.</p>
+
+<p>The optional quoted argument is a <a href="https://www.tcpdump.org/manpages/pcap-filter.7.html">libpcap capture filter</a>, not a Wireshark display filter. Filters involving VLAN traffic may need an explicit <code class="language-plaintext highlighter-rouge">vlan</code> expression. Windows users can build and read saved captures in WSL, but WSL’s visible interfaces are not necessarily the Windows host’s physical interfaces.</p>
+
+<h2 id="complete-code">Complete code</h2>
+
+<p>The parser checks each header before reading its fields. Unsupported protocols and malformed or truncated data get an explicit message. Payload output is bounded by the validated protocol length, with non-printable bytes replaced by dots in the ASCII column.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define _DEFAULT_SOURCE
+#include</span> <span class="cpf">&lt;inttypes.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;pcap/pcap.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;signal.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp">
+</span>
+<span class="k">struct</span> <span class="n">counters</span> <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">frames</span><span class="p">,</span> <span class="n">broadcast</span><span class="p">,</span> <span class="n">arp</span><span class="p">,</span> <span class="n">ipv4</span><span class="p">,</span> <span class="n">tcp</span><span class="p">,</span> <span class="n">udp</span><span class="p">,</span> <span class="n">icmp</span><span class="p">,</span> <span class="n">skipped</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">static</span> <span class="n">pcap_t</span> <span class="o">*</span><span class="n">capture</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">unsigned</span> <span class="nf">be16</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="p">((</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">uint32_t</span> <span class="nf">be32</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="p">((</span><span class="kt">uint32_t</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="kt">uint32_t</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="o">|</span> <span class="p">((</span><span class="kt">uint32_t</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">address</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">count</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mac</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">putchar</span><span class="p">(</span><span class="n">mac</span> <span class="o">?</span> <span class="sc">':'</span> <span class="o">:</span> <span class="sc">'.'</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="n">mac</span> <span class="o">?</span> <span class="s">"%02x"</span> <span class="o">:</span> <span class="s">"%u"</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">skip</span><span class="p">(</span><span class="k">struct</span> <span class="n">counters</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">reason</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">counts</span><span class="o">-&gt;</span><span class="n">skipped</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"  Skipped: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">reason</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">payload</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">;</span> <span class="n">offset</span> <span class="o">+=</span> <span class="mi">16</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kt">size_t</span> <span class="n">width</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="mi">16</span> <span class="o">?</span> <span class="n">length</span> <span class="o">-</span> <span class="n">offset</span> <span class="o">:</span> <span class="mi">16</span><span class="p">;</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"    %04zx  "</span><span class="p">,</span> <span class="n">offset</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">)</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"%02x "</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">]);</span>
+            <span class="k">else</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"   "</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">" |"</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">];</span>
+            <span class="n">putchar</span><span class="p">(</span><span class="n">c</span> <span class="o">&gt;=</span> <span class="mi">32</span> <span class="o">&amp;&amp;</span> <span class="n">c</span> <span class="o">&lt;=</span> <span class="mi">126</span> <span class="o">?</span> <span class="n">c</span> <span class="o">:</span> <span class="sc">'.'</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"|"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">port_hint</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">source</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="n">destination</span><span class="p">,</span> <span class="kt">int</span> <span class="n">tcp</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">hint</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="mi">53</span> <span class="o">||</span> <span class="n">destination</span> <span class="o">==</span> <span class="mi">53</span><span class="p">)</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="s">"DNS"</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="mi">443</span> <span class="o">||</span> <span class="n">destination</span> <span class="o">==</span> <span class="mi">443</span><span class="p">)</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="n">tcp</span> <span class="o">?</span> <span class="s">"TLS"</span> <span class="o">:</span> <span class="s">"QUIC"</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">tcp</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="mi">80</span> <span class="o">||</span> <span class="n">destination</span> <span class="o">==</span> <span class="mi">80</span><span class="p">))</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="s">"HTTP"</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">tcp</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="mi">25</span> <span class="o">||</span> <span class="n">destination</span> <span class="o">==</span> <span class="mi">25</span><span class="p">))</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="s">"SMTP"</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">tcp</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="mi">110</span> <span class="o">||</span> <span class="n">destination</span> <span class="o">==</span> <span class="mi">110</span><span class="p">))</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="s">"POP3"</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">tcp</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="mi">143</span> <span class="o">||</span> <span class="n">destination</span> <span class="o">==</span> <span class="mi">143</span><span class="p">))</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="s">"IMAP"</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">hint</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"  Port hint: %s, not application validation</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">hint</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">decode_arp</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span>
+                       <span class="k">struct</span> <span class="n">counters</span> <span class="o">*</span><span class="n">counts</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated ARP header"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">be16</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="o">||</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x0800</span> <span class="o">||</span> <span class="n">p</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">6</span> <span class="o">||</span> <span class="n">p</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"unsupported ARP address format"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">28</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated Ethernet/IPv4 ARP message"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">counts</span><span class="o">-&gt;</span><span class="n">arp</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"  ARP operation=%u sender="</span><span class="p">,</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">6</span><span class="p">));</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">" ("</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">") target="</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">" ("</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">")"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">decode_ipv4</span><span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span>
+                        <span class="k">struct</span> <span class="n">counters</span> <span class="o">*</span><span class="n">counts</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">20</span> <span class="o">||</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated or invalid IPv4 header"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kt">unsigned</span> <span class="n">header_length</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mi">15</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="n">total_length</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">header_length</span> <span class="o">&lt;</span> <span class="mi">20</span> <span class="o">||</span> <span class="n">header_length</span> <span class="o">&gt;</span> <span class="n">length</span> <span class="o">||</span>
+        <span class="n">total_length</span> <span class="o">&lt;</span> <span class="n">header_length</span> <span class="o">||</span> <span class="n">total_length</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"invalid or truncated IPv4 lengths"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">counts</span><span class="o">-&gt;</span><span class="n">ipv4</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"  IPv4 "</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">" -&gt; "</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">" ttl=%u header=%u total=%u checksum=0x%04x</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+           <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="n">header_length</span><span class="p">,</span> <span class="n">total_length</span><span class="p">,</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">10</span><span class="p">));</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x3fff</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"fragmented IPv4, no reassembly or transport decoding"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">unsigned</span> <span class="n">protocol</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">9</span><span class="p">];</span>
+    <span class="n">p</span> <span class="o">+=</span> <span class="n">header_length</span><span class="p">;</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">total_length</span> <span class="o">-</span> <span class="n">header_length</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">protocol</span> <span class="o">==</span> <span class="mi">6</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated TCP header"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="kt">unsigned</span> <span class="n">tcp_length</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tcp_length</span> <span class="o">&lt;</span> <span class="mi">20</span> <span class="o">||</span> <span class="n">tcp_length</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"invalid or truncated TCP header length"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">counts</span><span class="o">-&gt;</span><span class="n">tcp</span><span class="o">++</span><span class="p">;</span>
+        <span class="kt">unsigned</span> <span class="n">source</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">destination</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"  TCP %u -&gt; %u seq=%"</span> <span class="n">PRIu32</span> <span class="s">" ack=%"</span> <span class="n">PRIu32</span>
+               <span class="s">" flags=0x%02x header=%u window=%u checksum=0x%04x payload=%zu</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+               <span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">be32</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">4</span><span class="p">),</span> <span class="n">be32</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">8</span><span class="p">),</span>
+               <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">13</span><span class="p">],</span> <span class="n">tcp_length</span><span class="p">,</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">14</span><span class="p">),</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">16</span><span class="p">),</span>
+               <span class="n">length</span> <span class="o">-</span> <span class="n">tcp_length</span><span class="p">);</span>
+        <span class="n">port_hint</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="n">payload</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">tcp_length</span><span class="p">,</span> <span class="n">length</span> <span class="o">-</span> <span class="n">tcp_length</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">protocol</span> <span class="o">==</span> <span class="mi">17</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated UDP header"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="kt">unsigned</span> <span class="n">udp_length</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">4</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">udp_length</span> <span class="o">&lt;</span> <span class="mi">8</span> <span class="o">||</span> <span class="n">udp_length</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"invalid or truncated UDP length"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">counts</span><span class="o">-&gt;</span><span class="n">udp</span><span class="o">++</span><span class="p">;</span>
+        <span class="kt">unsigned</span> <span class="n">source</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">destination</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"  UDP %u -&gt; %u length=%u checksum=0x%04x payload=%u</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+               <span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">udp_length</span><span class="p">,</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">6</span><span class="p">),</span> <span class="n">udp_length</span> <span class="o">-</span> <span class="mi">8</span><span class="p">);</span>
+        <span class="n">port_hint</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="n">payload</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">8</span><span class="p">,</span> <span class="n">udp_length</span> <span class="o">-</span> <span class="mi">8</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">protocol</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated ICMP header"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated ICMP echo header"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">counts</span><span class="o">-&gt;</span><span class="n">icmp</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"  ICMP type=%u code=%u checksum=0x%04x"</span><span class="p">,</span>
+               <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">2</span><span class="p">));</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="n">printf</span><span class="p">(</span><span class="s">" echo-id=%u sequence=%u"</span><span class="p">,</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">4</span><span class="p">),</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">6</span><span class="p">));</span>
+        <span class="n">putchar</span><span class="p">(</span><span class="sc">'\n'</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"unsupported IPv4 protocol"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">packet</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">user</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">pcap_pkthdr</span> <span class="o">*</span><span class="n">header</span><span class="p">,</span>
+                   <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">counters</span> <span class="o">*</span><span class="n">counts</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">counters</span> <span class="o">*</span><span class="p">)</span><span class="n">user</span><span class="p">;</span>
+    <span class="kt">size_t</span> <span class="n">length</span> <span class="o">=</span> <span class="n">header</span><span class="o">-&gt;</span><span class="n">caplen</span><span class="p">;</span>
+    <span class="n">counts</span><span class="o">-&gt;</span><span class="n">frames</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">Frame %llu captured=%u original=%u</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+           <span class="n">counts</span><span class="o">-&gt;</span><span class="n">frames</span><span class="p">,</span> <span class="n">header</span><span class="o">-&gt;</span><span class="n">caplen</span><span class="p">,</span> <span class="n">header</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;</span> <span class="mi">14</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated Ethernet header"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"  Ethernet "</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">" -&gt; "</span><span class="p">);</span>
+    <span class="n">address</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">putchar</span><span class="p">(</span><span class="sc">'\n'</span><span class="p">);</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">broadcast</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">memcmp</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">broadcast</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">counts</span><span class="o">-&gt;</span><span class="n">broadcast</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="kt">unsigned</span> <span class="n">type</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">12</span><span class="p">);</span>
+    <span class="kt">size_t</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">14</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="mh">0x8100</span> <span class="o">||</span> <span class="n">type</span> <span class="o">==</span> <span class="mh">0x88a8</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">-</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"truncated VLAN tag"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"  VLAN id=%u</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x0fff</span><span class="p">);</span>
+        <span class="n">type</span> <span class="o">=</span> <span class="n">be16</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"  EtherType=0x%04x</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">type</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="mh">0x0800</span><span class="p">)</span>
+        <span class="n">decode_ipv4</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">length</span> <span class="o">-</span> <span class="n">offset</span><span class="p">,</span> <span class="n">counts</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="mh">0x0806</span><span class="p">)</span>
+        <span class="n">decode_arp</span><span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">length</span> <span class="o">-</span> <span class="n">offset</span><span class="p">,</span> <span class="n">counts</span><span class="p">);</span>
+    <span class="k">else</span>
+        <span class="n">skip</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="s">"unsupported EtherType or IEEE 802.3 length-format frame"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">stop_capture</span><span class="p">(</span><span class="kt">int</span> <span class="n">signum</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">signum</span><span class="p">;</span>
+    <span class="n">pcap_breakloop</span><span class="p">(</span><span class="n">capture</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">3</span> <span class="o">&amp;&amp;</span> <span class="n">argc</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">)</span> <span class="o">||</span>
+        <span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">"-r"</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">strcmp</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">"-i"</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Usage: %s {-r FILE | -i INTERFACE} [FILTER]</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kt">int</span> <span class="n">live</span> <span class="o">=</span> <span class="n">strcmp</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">"-i"</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">error</span><span class="p">[</span><span class="n">PCAP_ERRBUF_SIZE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+    <span class="n">capture</span> <span class="o">=</span> <span class="n">live</span> <span class="o">?</span> <span class="n">pcap_open_live</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">65535</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+                   <span class="o">:</span> <span class="n">pcap_open_offline</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">error</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">capture</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Capture error: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">error</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">'\0'</span><span class="p">)</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Capture warning: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">error</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">pcap_datalink</span><span class="p">(</span><span class="n">capture</span><span class="p">)</span> <span class="o">!=</span> <span class="n">DLT_EN10MB</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Unsupported link type %d, Ethernet is required.</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+                <span class="n">pcap_datalink</span><span class="p">(</span><span class="n">capture</span><span class="p">));</span>
+        <span class="n">pcap_close</span><span class="p">(</span><span class="n">capture</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">struct</span> <span class="n">bpf_program</span> <span class="n">filter</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">pcap_compile</span><span class="p">(</span><span class="n">capture</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">filter</span><span class="p">,</span> <span class="n">argc</span> <span class="o">==</span> <span class="mi">4</span> <span class="o">?</span> <span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">:</span> <span class="s">""</span><span class="p">,</span>
+                     <span class="mi">1</span><span class="p">,</span> <span class="n">PCAP_NETMASK_UNKNOWN</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Filter error: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pcap_geterr</span><span class="p">(</span><span class="n">capture</span><span class="p">));</span>
+        <span class="n">pcap_close</span><span class="p">(</span><span class="n">capture</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kt">int</span> <span class="n">filter_result</span> <span class="o">=</span> <span class="n">pcap_setfilter</span><span class="p">(</span><span class="n">capture</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">filter</span><span class="p">);</span>
+    <span class="n">pcap_freecode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">filter</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">filter_result</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Filter error: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pcap_geterr</span><span class="p">(</span><span class="n">capture</span><span class="p">));</span>
+        <span class="n">pcap_close</span><span class="p">(</span><span class="n">capture</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">struct</span> <span class="n">sigaction</span> <span class="n">action</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+    <span class="n">action</span><span class="p">.</span><span class="n">sa_handler</span> <span class="o">=</span> <span class="n">stop_capture</span><span class="p">;</span>
+    <span class="n">sigemptyset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">action</span><span class="p">.</span><span class="n">sa_mask</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sigaction</span><span class="p">(</span><span class="n">SIGINT</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">action</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span>
+        <span class="n">sigaction</span><span class="p">(</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">action</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">perror</span><span class="p">(</span><span class="s">"sigaction"</span><span class="p">);</span>
+        <span class="n">pcap_close</span><span class="p">(</span><span class="n">capture</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">struct</span> <span class="n">counters</span> <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+    <span class="kt">int</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pcap_loop</span><span class="p">(</span><span class="n">capture</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">packet</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">counts</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">PCAP_ERROR</span><span class="p">)</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Read error: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pcap_geterr</span><span class="p">(</span><span class="n">capture</span><span class="p">));</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">live</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">pcap_stat</span> <span class="n">stats</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">pcap_stats</span><span class="p">(</span><span class="n">capture</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">stats</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Capture stats: received=%u dropped=%u</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+                    <span class="n">stats</span><span class="p">.</span><span class="n">ps_recv</span><span class="p">,</span> <span class="n">stats</span><span class="p">.</span><span class="n">ps_drop</span><span class="p">);</span>
+        <span class="k">else</span>
+            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Statistics error: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pcap_geterr</span><span class="p">(</span><span class="n">capture</span><span class="p">));</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">Summary: frames=%llu broadcast=%llu ARP=%llu IPv4=%llu"</span>
+           <span class="s">" TCP=%llu UDP=%llu ICMP=%llu skipped=%llu</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+           <span class="n">counts</span><span class="p">.</span><span class="n">frames</span><span class="p">,</span> <span class="n">counts</span><span class="p">.</span><span class="n">broadcast</span><span class="p">,</span> <span class="n">counts</span><span class="p">.</span><span class="n">arp</span><span class="p">,</span> <span class="n">counts</span><span class="p">.</span><span class="n">ipv4</span><span class="p">,</span>
+           <span class="n">counts</span><span class="p">.</span><span class="n">tcp</span><span class="p">,</span> <span class="n">counts</span><span class="p">.</span><span class="n">udp</span><span class="p">,</span> <span class="n">counts</span><span class="p">.</span><span class="n">icmp</span><span class="p">,</span> <span class="n">counts</span><span class="p">.</span><span class="n">skipped</span><span class="p">);</span>
+    <span class="n">action</span><span class="p">.</span><span class="n">sa_handler</span> <span class="o">=</span> <span class="n">SIG_IGN</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sigaction</span><span class="p">(</span><span class="n">SIGINT</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">action</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span>
+        <span class="n">sigaction</span><span class="p">(</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">action</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">perror</span><span class="p">(</span><span class="s">"sigaction"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">pcap_close</span><span class="p">(</span><span class="n">capture</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="o">==</span> <span class="n">PCAP_ERROR</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="reading-the-output">Reading the output</h2>
+
+<p>Consider a synthetic frame containing a four-byte TCP payload, <code class="language-plaintext highlighter-rouge">test</code>, from <code class="language-plaintext highlighter-rouge">192.0.2.1</code> to <code class="language-plaintext highlighter-rouge">198.51.100.2</code>. Those addresses are reserved for documentation, not observations from a real capture.</p>
+
+<p>With a 20-byte IPv4 header and a 20-byte TCP header, the IPv4 total length is <code class="language-plaintext highlighter-rouge">20 + 20 + 4 = 44</code>. Adding the Ethernet header gives 58 captured bytes in this synthetic example. Real Ethernet transmission has minimum-frame padding, and a capture may omit padding or the frame check sequence.</p>
+
+<p><img src="/public/assets/netdump-byte-layout.svg" alt="Byte layout of a 58-byte capture, with header boundaries at offsets 0, 14, 34, 54, and 58 bytes" /></p>
+
+<p>The nesting becomes a sequence of headers in memory. Read the outer header, work out where its payload starts, then decode the next layer. In this example, TCP begins at byte 34. A VLAN tag or IPv4 options would move that offset, which is why the decoder calculates it rather than hard-coding it.</p>
+
+<p>The transport line could read:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TCP 12345 -&gt; 80 seq=1 ack=0 flags=0x18 header=20 window=4096 checksum=0x0000 payload=4
+Port hint: HTTP, not application validation
+</code></pre></div></div>
+
+<p>Flags <code class="language-plaintext highlighter-rouge">0x18</code> combine PSH (<code class="language-plaintext highlighter-rouge">0x08</code>) and ACK (<code class="language-plaintext highlighter-rouge">0x10</code>). The destination port suggests HTTP, but the four bytes <code class="language-plaintext highlighter-rouge">test</code> are not a valid HTTP request. That is why the program prints a hint rather than claiming it decoded HTTP.</p>
+
+<p>The zero checksum in this synthetic example is not a valid-checksum claim. To understand real traffic, separate what the parser actually checks from what the packet merely says.</p>
+
+<p>The final counters overlap by design: an IPv4 TCP frame counts as a frame, IPv4, and TCP. Broadcast is a link-layer property. A valid IPv4 header can be counted even when its transport protocol is skipped. Capture-library receive and drop counters have platform-specific meanings and need not equal the program’s decoded-frame count.</p>
+
+<p>For further detail, see the specifications for <a href="https://www.rfc-editor.org/rfc/rfc791">IPv4</a>, <a href="https://www.rfc-editor.org/rfc/rfc826">ARP</a>, <a href="https://www.rfc-editor.org/rfc/rfc768">UDP</a>, and <a href="https://www.rfc-editor.org/rfc/rfc9293">TCP</a>, along with libpcap’s <a href="https://www.tcpdump.org/manpages/pcap_loop.3pcap.html">capture loop</a> and <a href="https://www.tcpdump.org/manpages/pcap_breakloop.3pcap.html">safe loop termination</a> documentation.</p>
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>

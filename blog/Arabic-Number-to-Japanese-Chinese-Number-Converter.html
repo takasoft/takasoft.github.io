@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Takao Shibamoto is a software engineer working on large-scale distributed systems, big data, and AI infrastructure.">
+
+  <!-- Open Graph / Twitter Card metadata.
+       Controls the link preview when the URL is shared on LinkedIn, X,
+       Slack, etc. Page-aware: blog posts advertise their own title +
+       excerpt (+ image if the post defines one); the homepage and all
+       other pages advertise the site title + site.description so pasting
+       takasoft.io shows the site overview, not the first post. -->
+  
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TakaSoft">
+  <meta property="og:title" content="Arabic numerals to Japanese kanji">
+  <meta property="og:description" content="Convert Arabic numerals, the digits 0 through 9, into Japanese kanji. For example, 2342342 becomes 二百三十四万二千三百四十二.">
+  <meta property="og:url" content="https://takasoft.io/blog/Arabic-Number-to-Japanese-Chinese-Number-Converter">
+  <meta property="og:image" content="https://takasoft.io/public/assets/number-converter.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Arabic numerals to Japanese kanji">
+  <meta name="twitter:description" content="Convert Arabic numerals, the digits 0 through 9, into Japanese kanji. For example, 2342342 becomes 二百三十四万二千三百四十二.">
+  <meta name="twitter:image" content="https://takasoft.io/public/assets/number-converter.png">
+
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Arabic numerals to Japanese kanji - TakaSoft
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/toc.css">
+  <link rel="stylesheet" href="/public/css/main.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  
+</head>
+
+
+  <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-faded">
+  <div class="container">
+    <a class="navbar-brand" href="/">TakaSoft</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            Home <span class="visually-hidden">(current)</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about/">
+            About
+          </a>
+        </li>
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <div>
+    <div class="container">
+  <div class="post">
+    <h1 class="post-title">Arabic numerals to Japanese kanji</h1>
+    
+      
+      
+      <br>
+    
+    <span class="post-info">
+      <span class="post-date">
+        <i class="fa fa-calendar"></i>
+        <time class="entry-date published" datetime="2017-02-05T00:00:00+00:00">
+          2017-02-05
+        </time>
+      </span>
+    </span>
+    <p>Convert Arabic numerals, the digits 0 through 9, into Japanese kanji. For example, <code class="language-plaintext highlighter-rouge">2342342</code> becomes <code class="language-plaintext highlighter-rouge">二百三十四万二千三百四十二</code>.</p>
+
+<!--more-->
+
+<p>The characters overlap with Chinese numerals, but this converter follows Japanese conventions. It is not a general Chinese number formatter.</p>
+
+<form id="number-converter">
+  <label for="myText">Number to convert</label>
+  <div class="d-flex gap-2">
+    <input type="text" inputmode="decimal" id="myText" value="2342342" class="form-control" aria-describedby="converter-help converter-error" />
+    <button type="submit" class="btn btn-primary">Convert</button>
+  </div>
+  <p id="converter-help">Enter up to 72 integer digits, with an optional sign and decimal part. Use digits without commas or scientific notation.</p>
+  <p id="converter-error" role="alert" hidden=""></p>
+</form>
+
+<div class="divResults">
+<ul class="ulResults" id="listResults" aria-label="Conversion history" aria-live="polite" aria-relevant="additions">
+    <li class="liResults">2342342 = 二百三十四万二千三百四十二</li>
+</ul>
+</div>
+
+<noscript>Enable JavaScript to use the converter.</noscript>
+
+<h2 id="how-it-works">How it works</h2>
+
+<p>Japanese large-number units advance every four digits: <code class="language-plaintext highlighter-rouge">万</code> is 10,000, <code class="language-plaintext highlighter-rouge">億</code> is 100,000,000, and <code class="language-plaintext highlighter-rouge">兆</code> is 1,000,000,000,000.</p>
+
+<p>Split the integer into groups of four digits from the right. Within each group, turn the thousands, hundreds, tens, and ones into kanji. Skip zero digits and omit <code class="language-plaintext highlighter-rouge">一</code> before <code class="language-plaintext highlighter-rouge">十</code>, <code class="language-plaintext highlighter-rouge">百</code>, and <code class="language-plaintext highlighter-rouge">千</code>. Attach the group’s large-number unit, then join the nonzero groups from left to right.</p>
+
+<p>For <code class="language-plaintext highlighter-rouge">2342342</code>, the groups are <code class="language-plaintext highlighter-rouge">234</code> and <code class="language-plaintext highlighter-rouge">2342</code>. They become <code class="language-plaintext highlighter-rouge">二百三十四万</code> and <code class="language-plaintext highlighter-rouge">二千三百四十二</code>.</p>
+
+<p>Zero is <code class="language-plaintext highlighter-rouge">〇</code>. A negative value gets <code class="language-plaintext highlighter-rouge">マイナス</code> in front. After a decimal point, convert each digit separately, so <code class="language-plaintext highlighter-rouge">-12.05</code> becomes <code class="language-plaintext highlighter-rouge">マイナス十二.〇五</code>. Leading zeros do not change the value.</p>
+
+<p>The code reads the input as text rather than a JavaScript number, keeping every digit intact even beyond JavaScript’s exact integer range.</p>
+
+<script src="/public/js/numconverter.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/public/css/numcstyle.css" />
+
+
+    
+
+
+  
+  
+
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+
+    
+    
+
+    
+  
+    
+    
+    
+
+    
+    
+
+    
+  
+
+  
+
+  
+    <div class="related">
+      <h4>Read more like this</h4>
+      <ul class="related-posts">
+        
+          
+          <li>
+            <a href="/blog/hosting-private-jekyll-source-on-github-free">How to Host a Private Jekyll Source on GitHub Pages Without Paying for Pro</a>
+            <small>2026-05-11</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/imagej-pollen">Batch pollen image analysis with ImageJ</a>
+            <small>2017-09-17</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/tspm">Tissue Sample Plate Mapper</a>
+            <small>2017-08-16</small>
+          </li>
+        
+          
+          <li>
+            <a href="/blog/self-organizing-simulation">How a grid of colors organizes itself</a>
+            <small>2017-01-01</small>
+          </li>
+        
+      </ul>
+    </div>
+  
+
+
+  </div>
+</div>
+  </div>
+
+  <!--Footer-->
+<footer>
+
+  <p class="simple-footer" align="center">&copy; 2026 <a class="simple-footer" href="/">TakaSoft</a></p>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper; no jQuery dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <!-- Infinite scroll for the post list. Only kicks in on pages that
+       expose the #load-more button (homepage + paginated /pageN/ pages).
+       Falls back gracefully: with JS off, the button is a normal link
+       to the next page. -->
+  <script>
+    (function () {
+      const button = document.getElementById('load-more');
+      if (!button) return;
+
+      let loading = false;
+
+      async function loadMore() {
+        if (loading) return;
+        const nextUrl = button.getAttribute('href');
+        if (!nextUrl) return;
+
+        loading = true;
+        const originalText = button.textContent;
+        button.textContent = 'Loading…';
+
+        try {
+          const res = await fetch(nextUrl);
+          if (!res.ok) throw new Error(res.status);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+
+          const container = document.querySelector('.posts');
+          doc.querySelectorAll('.posts > .post, .posts > hr').forEach(node => {
+            container.appendChild(document.importNode(node, true));
+          });
+
+          const nextButton = doc.getElementById('load-more');
+          if (nextButton && nextButton.getAttribute('href')) {
+            button.setAttribute('href', nextButton.getAttribute('href'));
+            button.textContent = originalText;
+          } else {
+            button.parentElement.remove();
+          }
+        } catch (e) {
+          console.error('Failed to load more posts:', e);
+          button.textContent = originalText + ' (retry)';
+        } finally {
+          loading = false;
+        }
+      }
+
+      // Auto-trigger when the button scrolls into view.
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '200px' });
+      observer.observe(button);
+
+      // Handle manual click too — prevent navigation, do the fetch instead.
+      button.addEventListener('click', (e) => { e.preventDefault(); loadMore(); });
+    })();
+  </script>
+
+  <!-- Mermaid: lazy-load only on pages that have ```mermaid blocks. -->
+  <script type="module">
+    if (document.querySelector('.language-mermaid')) {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      document.querySelectorAll('.language-mermaid').forEach(el => {
+        const code = el.textContent;
+        const target = el.closest('pre') || el;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code;
+        target.replaceWith(div);
+      });
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      await mermaid.run();
+    }
+  </script>
+
+  
+  <!-- Cloudflare Web Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "931d22298716480fa54ecf46c2bd406b"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+  
+
+  
+
+</footer>
+
+
+  </body>
+</html>
