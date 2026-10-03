@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="340" viewBox="0 0 960 340" role="img" aria-labelledby="title description">
+  <title id="title">A captured Ethernet frame, laid out as bytes</title>
+  <desc id="description">A 58-byte synthetic capture has a 14-byte Ethernet header at offset 0, a 20-byte IPv4 header at offset 14, a 20-byte TCP header at offset 34, and four payload bytes at offset 54. The frame ends at offset 58. Segment widths are proportional to their byte counts.</desc>
+  <rect width="960" height="340" fill="#ffffff"/>
+  <g font-family="sans-serif" fill="#172b4d">
+    <text x="24" y="34" font-size="26" font-weight="700">A captured frame, laid out as bytes</text>
+    <text x="24" y="66" font-size="18">Example: 14 + 20 + 20 + 4 = 58 captured bytes</text>
+    <rect x="20" y="92" width="224" height="88" fill="#e8f1ff" stroke="#245ea8" stroke-width="2"/>
+    <rect x="244" y="92" width="320" height="88" fill="#e8f6ed" stroke="#267044" stroke-width="2"/>
+    <rect x="564" y="92" width="320" height="88" fill="#fff1d6" stroke="#8a5900" stroke-width="2"/>
+    <rect x="884" y="92" width="64" height="88" fill="#f0e9ff" stroke="#6b47a5" stroke-width="2"/>
+    <g>
+      <text x="132" y="128" font-size="20" font-weight="700" text-anchor="middle">Ethernet header</text>
+      <text x="132" y="156" font-size="18" text-anchor="middle">14 bytes</text>
+      <text x="404" y="128" font-size="20" font-weight="700" text-anchor="middle">IPv4 header</text>
+      <text x="404" y="156" font-size="18" text-anchor="middle">20 bytes</text>
+      <text x="724" y="128" font-size="20" font-weight="700" text-anchor="middle">TCP header</text>
+      <text x="724" y="156" font-size="18" text-anchor="middle">20 bytes</text>
+      <text x="916" y="128" font-size="16" font-weight="700" text-anchor="middle">Data</text>
+      <text x="916" y="155" font-size="15" text-anchor="middle">4 bytes</text>
+    </g>
+    <path d="M20 197 H948 M20 188 V205 M244 188 V205 M564 188 V205 M884 188 V205 M948 188 V205" fill="none" stroke="#172b4d" stroke-width="2"/>
+    <g font-size="17">
+      <text x="20" y="230" text-anchor="middle">0</text>
+      <text x="244" y="230" text-anchor="middle">14</text>
+      <text x="564" y="230" text-anchor="middle">34</text>
+      <text x="884" y="230" text-anchor="middle">54</text>
+      <text x="943" y="230" text-anchor="middle">58</text>
+    </g>
+    <text x="484" y="269" font-size="18" font-weight="700" text-anchor="middle">Byte offset from the start of the captured Ethernet frame</text>
+    <text x="24" y="314" font-size="17">No VLAN tags or options. Link padding and the frame check sequence are omitted.</text>
+  </g>
+</svg>
